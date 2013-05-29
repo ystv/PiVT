@@ -51,6 +51,7 @@ void PiVT_Network::handleAccept (boost::shared_ptr<PiVT_TCPConnection> new_conne
 	if (!error)
 	{
 		new_connection->start();
+		m_clients.push_back(new_connection);
 	}
 
 	startAccept();
@@ -72,5 +73,32 @@ PiVT_CommandData PiVT_Network::tick ()
 		temp.command = PIVT_UNKNOWN;
 	}
 	return temp;
+
+}
+
+/*
+ * Send a string to all connected clients
+ */
+void PiVT_Network::sendall (std::string message)
+{
+    // Send a message to the live ones
+    for (boost::weak_ptr<PiVT_TCPConnection> conn : m_clients)
+    {
+        // Intentional assignment-in-condition.
+        boost::shared_ptr<PiVT_TCPConnection> ptr;
+        if (ptr = conn.lock())
+        {
+            ptr->writeData(message);
+        }
+        ptr.reset();
+    }
+
+    // Clean out all the dead connections
+    m_clients.erase(
+                std::remove_if(m_clients.begin(), m_clients.end(),
+                        [](const boost::weak_ptr<PiVT_TCPConnection> & o)
+                {
+                    return o.expired();
+                }), m_clients.end());
 
 }

@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <string>
+#include <algorithm>
 #include <boost/asio.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -36,6 +37,8 @@ public:
 
     PiVT_CommandData tick();
 
+    void sendall (std::string message);
+
 private:
     boost::shared_ptr<boost::asio::io_service> m_io_service;
 	boost::asio::ip::tcp::acceptor m_acceptor;
@@ -45,5 +48,6 @@ private:
 
 
 	std::vector<PiVT_CommandData> m_incoming;
+	std::vector<boost::weak_ptr<PiVT_TCPConnection>> m_clients;
 };
 
