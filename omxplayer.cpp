@@ -572,6 +572,9 @@ int main(int argc, char *argv[])
 	PiVT_Config config;
 	PiVT_Network network(config.get_port());
 
+	std::string nextvideo = config.get_stopvideo();
+	std::string currentvideo = config.get_stopvideo();
+
 	signal(SIGINT, sig_handler);
 
 	if (isatty(STDIN_FILENO))
@@ -738,7 +741,7 @@ int main(int argc, char *argv[])
 
 	start_omx();
 
-	m_filename = std::string(config.get_videosfolder() + config.get_stopvideo());
+	m_filename = std::string(config.get_stopvideo());
 
 	if (!Exists(m_filename))
 	{
@@ -878,6 +881,9 @@ int main(int argc, char *argv[])
 
 	struct timespec starttime, endtime;
 
+	// Load the stop video ready for next time
+	load_background_video(config.get_stopvideo());
+
 	// m_av_clock->OMXReset();
 	while (!m_stop)
 	{
@@ -885,7 +891,6 @@ int main(int argc, char *argv[])
 			goto do_exit;
 
 		// Process network commands
-		static std::string nextvideo = config.get_stopvideo();
 		PiVT_CommandData netcommand = network.tick();
 		switch (netcommand.command)
 		{
@@ -904,12 +909,13 @@ int main(int argc, char *argv[])
 					}
 
 					m_filename = std::string(config.get_videosfolder() + nextvideo);
+					currentvideo = nextvideo;
 					nextvideo = config.get_stopvideo();
 
 					// Play the file
 					pthread_join(m_omx_reader_thread, NULL);
 					run_loaded_video();
-					load_background_video(config.get_videosfolder() + config.get_stopvideo());
+					load_background_video(config.get_stopvideo());
 
 					// Report some info
 					std::stringstream ss;
@@ -919,7 +925,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					netcommand.conn->writeData("404 File: " + config.get_videosfolder() + netcommand.arg + " not found!");
+					netcommand.conn->writeData("404 File: " + netcommand.arg + " not found!");
 				}
 				break;
 			}
@@ -950,11 +956,12 @@ int main(int argc, char *argv[])
 				}
 
 				m_filename = std::string(config.get_videosfolder() + nextvideo);
+				currentvideo = nextvideo;
 				nextvideo = config.get_stopvideo();
 
 				// Play the file
 				run_loaded_video();
-				load_background_video(config.get_videosfolder() + config.get_stopvideo());
+				load_background_video(config.get_stopvideo());
 				break;
 			}
 			case PIVT_INFO:
@@ -962,16 +969,16 @@ int main(int argc, char *argv[])
 				std::stringstream ss;
 				ss << "200 ";
 
-				if (m_filename.compare(config.get_videosfolder() + config.get_stopvideo()))
+				if (m_filename.compare(config.get_stopvideo()))
 				{
-					ss << "Playing " << m_filename << ", ";
+					ss << "Playing " << currentvideo << ", ";
 				}
 				else
 				{
 					ss << "Stopped, ";
 				}
 
-				if (!config.get_stopvideo().compare(nextvideo))
+				if (config.get_stopvideo().compare(nextvideo))
 				{
 					ss << "Loaded " << nextvideo << ", ";
 				}
@@ -983,12 +990,15 @@ int main(int argc, char *argv[])
 				double pts = m_av_clock->GetPTS();
 			    int remain = int(float((m_omx_reader->GetStreamLength()/1000.0f) - (pts / DVD_TIME_BASE)));
 
-			    ss << remain << " seconds remain,";
+			    ss << remain << " seconds remain";
 
 			    netcommand.conn->writeData(ss.str());
 
 			    break;
 			}
+			case PIVT_QUIT:
+			    printf("Lost a client.\r\n");
+			    break;
 			default:
 			{
 				// Does nothing, accounts for no command
@@ -1062,7 +1072,7 @@ int main(int argc, char *argv[])
 			if (!m_player_audio.GetCached() && !m_player_video.GetCached())
 			{
 				run_loaded_video();
-				load_background_video(config.get_videosfolder() + config.get_stopvideo());
+				load_background_video(config.get_stopvideo());
 			}
 			else
 			{
