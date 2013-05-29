@@ -23,7 +23,7 @@
 
 PiVT_Config::PiVT_Config()
 {
-	stopvideo = "/home/sam.nicholson/woodstock_sd.mp4";
+	stopvideo = "/home/sam.nicholson/logo.avi";
 	videosfolder = "/home/sam.nicholson/";
 	port = 9815;
 

@@ -725,12 +725,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (optind >= argc)
-	{
-		print_usage();
-		return 0;
-	}
-
 	if (m_has_font && !Exists(m_font_path))
 	{
 		PrintFileNotFound(m_font_path);
@@ -946,22 +940,24 @@ int main(int argc, char *argv[])
 			case PIVT_STOP:
 			{
 				// Load file if needed
-				if (nextvideo != config.get_stopvideo())
+				if (nextvideo.compare(config.get_stopvideo()))
 				{
 					nextvideo = config.get_stopvideo();
 					pthread_join(m_omx_reader_thread, NULL);
-					std::string fullpath = std::string(config.get_videosfolder() + nextvideo);
-					threadfile = fullpath;
+					threadfile = nextvideo;
 					reader_open_thread(&threadfile);
 				}
 
-				m_filename = std::string(config.get_videosfolder() + nextvideo);
+				m_filename = std::string(nextvideo);
 				currentvideo = nextvideo;
 				nextvideo = config.get_stopvideo();
 
 				// Play the file
 				run_loaded_video();
 				load_background_video(config.get_stopvideo());
+
+				netcommand.conn->writeData("204 Stopped");
+
 				break;
 			}
 			case PIVT_INFO:
@@ -969,7 +965,7 @@ int main(int argc, char *argv[])
 				std::stringstream ss;
 				ss << "200 ";
 
-				if (m_filename.compare(config.get_stopvideo()))
+				if (currentvideo.compare(config.get_stopvideo()))
 				{
 					ss << "Playing " << currentvideo << ", ";
 				}
@@ -1079,7 +1075,7 @@ int main(int argc, char *argv[])
 			    // Send some data to the client to mark new play
 			    if (!config.get_stopvideo().compare(currentvideo))
 			    {
-			        network.sendall("204 Stopped.");
+			        network.sendall("204 Stopped");
 			    }
 			    else
 			    {
