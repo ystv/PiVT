@@ -35,6 +35,8 @@ enum PiVT_Command
     PIVT_PLAY,
     PIVT_STOP,
     PIVT_INFO,
+    PIVT_QUIT,
+    PIVT_HELP,
     PIVT_UNKNOWN
 };
 

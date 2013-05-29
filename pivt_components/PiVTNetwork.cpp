@@ -69,7 +69,6 @@ PiVT_CommandData PiVT_Network::tick ()
 	}
 	else
 	{
-
 		temp.command = PIVT_UNKNOWN;
 	}
 	return temp;

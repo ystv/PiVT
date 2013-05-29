@@ -50,7 +50,7 @@ boost::asio::ip::tcp::socket& PiVT_TCPConnection::socket ()
  */
 void PiVT_TCPConnection::start ()
 {
-    std::string message = "Welcome to PiVT.\r\n";
+    std::string message = "Welcome to PiVT. Press h<ENTER> for help.\r\n";
 
     boost::asio::write(m_socket, boost::asio::buffer(message));
 
@@ -100,6 +100,23 @@ void PiVT_TCPConnection::handleIncomingData (
     	case 'i':
     		newdata.command = PIVT_INFO;
     		break;
+    	case 'q':
+    	    newdata.command = PIVT_QUIT;
+    	    break;
+    	case 'h':
+    	{
+    	    std::stringstream helpstring;
+    	    helpstring << "PiVT Command Reference: " << std::endl;
+    	    helpstring << "\t p FILENAME\t\tPlay specified file" << std::endl;
+    	    helpstring << "\t l FILENAME\t\tLoad file in background" << std::endl;
+    	    helpstring << "\t s         \t\tStop playing (run stop video)" << std::endl;
+    	    helpstring << "\t i         \t\tDisplay current status" << std::endl;
+    	    helpstring << "\t h         \t\tShow this help" << std::endl;
+    	    helpstring << "\t q         \t\tDisconnect" << std::endl;
+    	    writeData(helpstring.str());
+    	    newdata.command = PIVT_HELP;
+    	    break;
+    	}
     	default:
     	{
     		newdata.command = PIVT_UNKNOWN;
@@ -120,10 +137,13 @@ void PiVT_TCPConnection::handleIncomingData (
     	m_data_vector->push_back(newdata);
     }
 
-    boost::asio::async_read_until(m_socket, m_messagedata, '\n',
-            boost::bind(&PiVT_TCPConnection::handleIncomingData,
-                    shared_from_this(), boost::asio::placeholders::error,
-                    boost::asio::placeholders::bytes_transferred()));
+    if (PIVT_QUIT != newdata.command)
+    {
+        boost::asio::async_read_until(m_socket, m_messagedata, '\n',
+                boost::bind(&PiVT_TCPConnection::handleIncomingData,
+                        shared_from_this(), boost::asio::placeholders::error,
+                        boost::asio::placeholders::bytes_transferred()));
+    }
 }
 
 void PiVT_TCPConnection::writeData (std::string data)
