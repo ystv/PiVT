@@ -29,7 +29,7 @@ Edit Makefile.include and change NATIVE_BUILD to 1.
 Building
 -----------------
 This needs a custom copy of ffmpeg; either run make ffmpeg to clone and build
-or download the binaries from http://ystv.co.uk/static/downloads/PiVT_Server_1.0.0.tar.gz
+or download the binaries from http://ystv.co.uk/static/downloads/PiVTServer.tar.gz
 
 Run make to build.
 
