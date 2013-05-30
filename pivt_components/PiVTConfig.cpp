@@ -23,8 +23,8 @@
 
 PiVT_Config::PiVT_Config()
 {
-	stopvideo = "/home/sam.nicholson/logo.avi";
-	videosfolder = "/home/sam.nicholson/";
+	stopvideo = "";
+	videosfolder = "";
 	port = 9815;
 
 }

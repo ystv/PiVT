@@ -38,7 +38,7 @@ SRC=linux/XMemUtils.cpp \
 
 OBJS+=$(filter %.o,$(SRC:.cpp=.o))
 
-all: omxplayer.bin
+all: PiVT.bin
 
 %.o: %.cpp
 	@rm -f $@ 
@@ -47,9 +47,9 @@ all: omxplayer.bin
 list_test:
 	$(CXX) -O3 -o list_test list_test.cpp
 
-omxplayer.bin: $(OBJS)
-	$(CXX) $(LDFLAGS) -o omxplayer.bin $(OBJS) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lswresample -lpcre -lboost_system
-	#arm-unknown-linux-gnueabi-strip omxplayer.bin
+PiVT.bin: $(OBJS)
+	$(CXX) $(LDFLAGS) -o PiVT.bin $(OBJS) -lvchiq_arm -lvcos -lrt -lpthread -lavutil -lavcodec -lavformat -lswscale -lswresample -lpcre -lboost_system
+	#arm-unknown-linux-gnueabi-strip PiVT.bin
 
 clean:
 	for i in $(OBJS); do (if test -e "$$i"; then ( rm $$i ); fi ); done
@@ -64,12 +64,12 @@ ffmpeg:
 	make -f Makefile.ffmpeg
 	make -f Makefile.ffmpeg install
 
-dist: omxplayer.bin
-	mkdir -p $(DIST)/usr/lib/omxplayer
+dist: PiVT.bin
+	mkdir -p $(DIST)/usr/lib/PiVT
 	mkdir -p $(DIST)/usr/bin
-	mkdir -p $(DIST)/usr/share/doc/omxplayer
+	mkdir -p $(DIST)/usr/share/doc/PiVT
 	cp omxplayer omxplayer.bin $(DIST)/usr/bin
-	cp COPYING $(DIST)/usr/share/doc/omxplayer/
-	cp README.md $(DIST)/usr/share/doc/omxplayer/README
-	cp -a ffmpeg_compiled/usr/local/lib/*.so* $(DIST)/usr/lib/omxplayer/
-	tar -czf omxplayer-dist.tar.gz $(DIST)
+	cp COPYING $(DIST)/usr/share/doc/PiVT/
+	cp README.md $(DIST)/usr/share/doc/PiVT/README
+	cp -a ffmpeg_compiled/usr/local/lib/*.so* $(DIST)/usr/lib/PiVT/
+	tar -czf PiVT-dist.tar.gz $(DIST)

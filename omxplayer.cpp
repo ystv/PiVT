@@ -149,10 +149,13 @@ void sig_handler(int s)
 
 void print_usage()
 {
-	printf("Usage: omxplayer [OPTIONS] [FILE...]\n");
+	printf("Usage: PiVT [OPTIONS]\n");
 	printf("Options :\n");
 	printf("         -h / --help                    print this help\n");
 //  printf("         -a / --alang language          audio language        : e.g. ger\n");
+    printf("         -f / --videofolder path        Absolute path to videos (include trailing slash): e.g. /data/videos/ \n");
+    printf("         -v / --stopvideo path          Absolute path to stop video    : e.g. /data/videos/logo.mp4\n");
+    printf("         -n / --aidx  index             audio stream index    : e.g. 1\n");
 	printf("         -n / --aidx  index             audio stream index    : e.g. 1\n");
 	printf("         -o / --adev  device            audio out device      : e.g. hdmi/local\n");
 	printf("         -i / --info                    dump stream format and exit\n");
@@ -160,22 +163,11 @@ void print_usage()
 	printf("         -p / --passthrough             audio passthrough\n");
 	printf("         -d / --deinterlace             deinterlacing\n");
 	printf("         -w / --hw                      hw audio decoding\n");
-	printf("         -3 / --3d mode                 switch tv into 3d mode (e.g. SBS/TB)\n");
 	printf("         -y / --hdmiclocksync           adjust display refresh rate to match video (default)\n");
 	printf("         -z / --nohdmiclocksync         do not adjust display refresh rate to match video\n");
-	printf("         -t / --sid index               show subtitle with index\n");
 	printf("         -r / --refresh                 adjust framerate/resolution to video\n");
-	printf("         -l / --pos                     start position (in seconds)\n");
-	printf("         -L / --loop                    loop files endlessly\n");
 	printf("              --boost-on-downmix        boost volume when downmixing\n");
-	printf("              --subtitles path          external subtitles in UTF-8 srt format\n");
-	printf("              --font path               subtitle font\n");
-	printf("                                        (default: /usr/share/fonts/truetype/freefont/FreeSans.ttf)\n");
-	printf("              --font-size size          font size as thousandths of screen height\n");
-	printf("                                        (default: 55)\n");
 	printf("              --align left/center       subtitle alignment (default: left)\n");
-	printf("              --lines n                 number of lines to accommodate in the subtitle buffer\n");
-	printf("                                        (default: 3)\n");
 	printf("              --win \"x1 y1 x2 y2\"       Set position of video window\n");
 }
 
@@ -572,9 +564,6 @@ int main(int argc, char *argv[])
 	PiVT_Config config;
 	PiVT_Network network(config.get_port());
 
-	std::string nextvideo = config.get_stopvideo();
-	std::string currentvideo = config.get_stopvideo();
-
 	signal(SIGINT, sig_handler);
 
 	if (isatty(STDIN_FILENO))
@@ -612,14 +601,20 @@ int main(int argc, char *argv[])
 	const int pos_opt = 0x105;
 	const int boost_on_downmix_opt = 0x200;
 
-	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, { "help", no_argument, NULL, 'h' }, { "aidx", required_argument, NULL, 'n' }, { "adev", required_argument, NULL, 'o' }, { "stats", no_argument, NULL, 's' }, { "passthrough", no_argument, NULL, 'p' }, { "deinterlace", no_argument, NULL, 'd' }, { "hw", no_argument, NULL, 'w' }, { "3d", required_argument, NULL, '3' }, { "hdmiclocksync", no_argument, NULL, 'y' }, { "nohdmiclocksync", no_argument, NULL, 'z' }, { "refresh", no_argument, NULL, 'r' }, { "sid", required_argument, NULL, 't' }, { "pos", required_argument, NULL, 'l' }, { "loop", no_argument, NULL, 'L' }, { "font", required_argument, NULL, font_opt }, { "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt }, { "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt }, { "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt }, { 0, 0, 0, 0 } };
+	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, {"videofolder", required_argument, NULL, 'f'}, {"stopvideo", required_argument, NULL, 'v'}, { "help", no_argument, NULL, 'h' }, { "aidx", required_argument, NULL, 'n' }, { "adev", required_argument, NULL, 'o' }, { "stats", no_argument, NULL, 's' }, { "passthrough", no_argument, NULL, 'p' }, { "deinterlace", no_argument, NULL, 'd' }, { "hw", no_argument, NULL, 'w' }, { "3d", required_argument, NULL, '3' }, { "hdmiclocksync", no_argument, NULL, 'y' }, { "nohdmiclocksync", no_argument, NULL, 'z' }, { "refresh", no_argument, NULL, 'r' }, { "sid", required_argument, NULL, 't' }, { "pos", required_argument, NULL, 'l' }, { "loop", no_argument, NULL, 'L' }, { "font", required_argument, NULL, font_opt }, { "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt }, { "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt }, { "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt }, { 0, 0, 0, 0 } };
 
 	int c;
 	std::string mode;
-	while ((c = getopt_long(argc, argv, "wihn:l:o:cslpd3:yzt:rL", longopts, NULL)) != -1)
+	while ((c = getopt_long(argc, argv, "wihn:l:o:f:v:cslpd3:yzt:rL", longopts, NULL)) != -1)
 	{
 		switch (c)
 		{
+		    case 'f':
+		        config.videosfolder = optarg;
+		        break;
+		    case 'v':
+		        config.stopvideo = optarg;
+		        break;
 			case 'r':
 				m_refresh = true;
 				break;
@@ -725,6 +720,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	std::string nextvideo = config.get_stopvideo();
+    std::string currentvideo = config.get_stopvideo();
+
 	if (m_has_font && !Exists(m_font_path))
 	{
 		PrintFileNotFound(m_font_path);
@@ -739,7 +737,7 @@ int main(int argc, char *argv[])
 
 	if (!Exists(m_filename))
 	{
-		printf(std::string("Stop video " + m_filename + " not found. Exiting.\n").c_str());
+		printf(std::string("Stop video " + m_filename + " not found (did you use an absolute path?). Exiting.\n").c_str());
 		goto do_exit;
 	}
 

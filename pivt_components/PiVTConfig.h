@@ -33,9 +33,11 @@ public:
 	std::string get_stopvideo();
 	int get_port();
 
-private:
 	std::string videosfolder;
-	std::string stopvideo;
+    std::string stopvideo;
+
+private:
+
 	int port;
 };
 
