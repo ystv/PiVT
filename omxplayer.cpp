@@ -601,7 +601,19 @@ int main(int argc, char *argv[])
 	const int pos_opt = 0x105;
 	const int boost_on_downmix_opt = 0x200;
 
-	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, {"videofolder", required_argument, NULL, 'f'}, {"stopvideo", required_argument, NULL, 'v'}, { "help", no_argument, NULL, 'h' }, { "aidx", required_argument, NULL, 'n' }, { "adev", required_argument, NULL, 'o' }, { "stats", no_argument, NULL, 's' }, { "passthrough", no_argument, NULL, 'p' }, { "deinterlace", no_argument, NULL, 'd' }, { "hw", no_argument, NULL, 'w' }, { "3d", required_argument, NULL, '3' }, { "hdmiclocksync", no_argument, NULL, 'y' }, { "nohdmiclocksync", no_argument, NULL, 'z' }, { "refresh", no_argument, NULL, 'r' }, { "sid", required_argument, NULL, 't' }, { "pos", required_argument, NULL, 'l' }, { "loop", no_argument, NULL, 'L' }, { "font", required_argument, NULL, font_opt }, { "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt }, { "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt }, { "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt }, { 0, 0, 0, 0 } };
+	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, {"videofolder", required_argument, NULL, 'f'},
+			{"stopvideo", required_argument, NULL, 'v'}, { "help", no_argument, NULL, 'h' },
+			{ "aidx", required_argument, NULL, 'n' }, { "adev", required_argument, NULL, 'o' },
+			{ "stats", no_argument, NULL, 's' }, { "passthrough", no_argument, NULL, 'p' },
+			{ "deinterlace", no_argument, NULL, 'd' }, { "hw", no_argument, NULL, 'w' },
+			{ "3d", required_argument, NULL, '3' }, { "hdmiclocksync", no_argument, NULL, 'y' },
+			{ "nohdmiclocksync", no_argument, NULL, 'z' }, { "refresh", no_argument, NULL, 'r' },
+			{ "sid", required_argument, NULL, 't' }, { "pos", required_argument, NULL, 'l' },
+			{ "loop", no_argument, NULL, 'L' }, { "font", required_argument, NULL, font_opt },
+			{ "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt },
+			{ "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt },
+			{ "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt },
+			{ 0, 0, 0, 0 } };
 
 	int c;
 	std::string mode;
