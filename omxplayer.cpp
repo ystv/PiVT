@@ -891,7 +891,7 @@ int main(int argc, char *argv[])
 				if (Exists(config.get_videosfolder() + netcommand.arg))
 				{
 					// Load file if needed
-					if (netcommand.arg != nextvideo)
+					if (netcommand.arg != nextvideo && !netcommand.arg.empty())
 					{
 						nextvideo = netcommand.arg;
 						pthread_join(m_omx_reader_thread, NULL);
