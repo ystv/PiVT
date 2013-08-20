@@ -67,7 +67,7 @@ void * sniffClips (void *psniffdata)
 
     for (std::string filename : files)
     {
-    	if (avformat_open_input(&pFormatCtx, filename.c_str(), NULL, NULL) != 0)
+    	if (avformat_open_input(&pFormatCtx, (pd->folder + filename).c_str(), NULL, NULL) != 0)
     	{
     		// File not opened
     		continue;

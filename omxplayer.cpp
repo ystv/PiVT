@@ -64,6 +64,7 @@ extern "C"
 
 #include "PiVTNetwork.h"
 #include "PiVTConfig.h"
+#include "PiVTClipSniffer.h"
 
 typedef enum
 {
@@ -515,8 +516,9 @@ void run_loaded_video()
 
 	// Try and detect if stream has changed
 	COMXStreamInfo m_hints_video_next;
+	COMXStreamInfo m_hints_audio_next;
 
-	//m_omx_reader->GetHints(OMXSTREAM_AUDIO, m_hints_audio);
+	m_omx_reader_next->GetHints(OMXSTREAM_AUDIO, m_hints_audio_next);
 	m_omx_reader_next->GetHints(OMXSTREAM_VIDEO, m_hints_video_next);
 
 	if (m_hints_video_next.height != m_hints_video.height ||
@@ -529,6 +531,16 @@ void run_loaded_video()
 		m_player_video.Close();
 		m_player_video.Open(m_hints_video, m_av_clock, DestRect, m_Deinterlace,  m_bMpeg,
 							   m_hdmi_clock_sync, m_thread_player, m_display_aspect);
+	}
+
+	if (m_hints_audio_next.codec != m_hints_audio.codec ||
+			m_hints_audio_next.channels != m_hints_audio.channels)
+	{
+		m_hints_audio = m_hints_audio_next;
+		m_player_audio.Close();
+		m_player_audio.Open(m_hints_audio, m_av_clock, m_omx_reader, deviceString,
+				m_passthrough, m_use_hw_audio, m_boost_on_downmix, m_thread_player);
+
 	}
 
 	if (m_omx_reader)
@@ -563,6 +575,7 @@ int main(int argc, char *argv[])
 {
 	PiVT_Config config;
 	PiVT_Network network(config.get_port());
+	pthread_t pivt_listthread;
 
 	signal(SIGINT, sig_handler);
 
@@ -1001,6 +1014,17 @@ int main(int argc, char *argv[])
 			    netcommand.conn->writeData(ss.str());
 
 			    break;
+			}
+			case PIVT_LIST:
+			{
+	    		PiVT_SnifferData *psniffdata = new PiVT_SnifferData;
+	    		psniffdata->conn = netcommand.conn;
+	    		psniffdata->folder = config.videosfolder;
+
+	    		void * pvoidsd = (void *)psniffdata;
+
+	    		pthread_create(&pivt_listthread, NULL, sniffClips, pvoidsd);
+	    		break;
 			}
 			case PIVT_QUIT:
 			    printf("Lost a client.\r\n");
