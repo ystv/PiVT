@@ -14,7 +14,7 @@ else
 BUILDROOT	:=/
 SDKSTAGE	:=/
 TARGETFS	:=/
-TOOLCHAIN	:=/usr/bin/
+TOOLCHAIN	:=/usr/
 HOST			:=arm-linux-gnueabihf
 SYSROOT		:=/
 endif

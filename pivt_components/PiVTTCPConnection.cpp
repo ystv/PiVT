@@ -100,6 +100,9 @@ void PiVT_TCPConnection::handleIncomingData (
     	case 'i':
     		newdata.command = PIVT_INFO;
     		break;
+    	case 'g':
+    		newdata.command = PIVT_LIST;
+    		break;
     	case 'q':
     	    newdata.command = PIVT_QUIT;
     	    break;
@@ -111,6 +114,7 @@ void PiVT_TCPConnection::handleIncomingData (
     	    helpstring << "\t l FILENAME\t\tLoad file in background" << std::endl;
     	    helpstring << "\t s         \t\tStop playing (run stop video)" << std::endl;
     	    helpstring << "\t i         \t\tDisplay current status" << std::endl;
+    	    helpstring << "\t g         \t\tDisplay list of files and durations" << std::endl;
     	    helpstring << "\t h         \t\tShow this help" << std::endl;
     	    helpstring << "\t q         \t\tDisconnect" << std::endl;
     	    writeData(helpstring.str());

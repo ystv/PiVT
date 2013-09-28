@@ -64,6 +64,7 @@ extern "C"
 
 #include "PiVTNetwork.h"
 #include "PiVTConfig.h"
+#include "PiVTClipSniffer.h"
 
 typedef enum
 {
@@ -116,6 +117,7 @@ bool m_has_audio = false;
 bool m_has_subtitle = false;
 float m_display_aspect = 0.0f;
 bool m_boost_on_downmix = false;
+long m_volume = 0;
 bool m_loop = false;
 double startpts = 0;
 
@@ -166,6 +168,7 @@ void print_usage()
 	printf("         -y / --hdmiclocksync           adjust display refresh rate to match video (default)\n");
 	printf("         -z / --nohdmiclocksync         do not adjust display refresh rate to match video\n");
 	printf("         -r / --refresh                 adjust framerate/resolution to video\n");
+	printf("              --vol                     set volume in millibels (default 0)\n");
 	printf("              --boost-on-downmix        boost volume when downmixing\n");
 	printf("              --align left/center       subtitle alignment (default: left)\n");
 	printf("              --win \"x1 y1 x2 y2\"       Set position of video window\n");
@@ -515,8 +518,9 @@ void run_loaded_video()
 
 	// Try and detect if stream has changed
 	COMXStreamInfo m_hints_video_next;
+	COMXStreamInfo m_hints_audio_next;
 
-	//m_omx_reader->GetHints(OMXSTREAM_AUDIO, m_hints_audio);
+	m_omx_reader_next->GetHints(OMXSTREAM_AUDIO, m_hints_audio_next);
 	m_omx_reader_next->GetHints(OMXSTREAM_VIDEO, m_hints_video_next);
 
 	if (m_hints_video_next.height != m_hints_video.height ||
@@ -529,6 +533,17 @@ void run_loaded_video()
 		m_player_video.Close();
 		m_player_video.Open(m_hints_video, m_av_clock, DestRect, m_Deinterlace,  m_bMpeg,
 							   m_hdmi_clock_sync, m_thread_player, m_display_aspect);
+	}
+
+	if (m_hints_audio_next.codec != m_hints_audio.codec ||
+			m_hints_audio_next.channels != m_hints_audio.channels)
+	{
+		m_hints_audio = m_hints_audio_next;
+		m_player_audio.Close();
+		m_player_audio.Open(m_hints_audio, m_av_clock, m_omx_reader, deviceString,
+				m_passthrough, m_use_hw_audio, m_boost_on_downmix, m_thread_player);
+		m_player_audio.SetCurrentVolume(m_volume);
+
 	}
 
 	if (m_omx_reader)
@@ -563,6 +578,7 @@ int main(int argc, char *argv[])
 {
 	PiVT_Config config;
 	PiVT_Network network(config.get_port());
+	pthread_t pivt_listthread;
 
 	signal(SIGINT, sig_handler);
 
@@ -600,8 +616,21 @@ int main(int argc, char *argv[])
 	const int lines_opt = 0x104;
 	const int pos_opt = 0x105;
 	const int boost_on_downmix_opt = 0x200;
+	const int vol_opt = 0x201;
 
-	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, {"videofolder", required_argument, NULL, 'f'}, {"stopvideo", required_argument, NULL, 'v'}, { "help", no_argument, NULL, 'h' }, { "aidx", required_argument, NULL, 'n' }, { "adev", required_argument, NULL, 'o' }, { "stats", no_argument, NULL, 's' }, { "passthrough", no_argument, NULL, 'p' }, { "deinterlace", no_argument, NULL, 'd' }, { "hw", no_argument, NULL, 'w' }, { "3d", required_argument, NULL, '3' }, { "hdmiclocksync", no_argument, NULL, 'y' }, { "nohdmiclocksync", no_argument, NULL, 'z' }, { "refresh", no_argument, NULL, 'r' }, { "sid", required_argument, NULL, 't' }, { "pos", required_argument, NULL, 'l' }, { "loop", no_argument, NULL, 'L' }, { "font", required_argument, NULL, font_opt }, { "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt }, { "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt }, { "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt }, { 0, 0, 0, 0 } };
+	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, {"videofolder", required_argument, NULL, 'f'},
+			{"stopvideo", required_argument, NULL, 'v'}, { "help", no_argument, NULL, 'h' },
+			{ "aidx", required_argument, NULL, 'n' }, { "adev", required_argument, NULL, 'o' },
+			{ "stats", no_argument, NULL, 's' }, { "passthrough", no_argument, NULL, 'p' },
+			{ "deinterlace", no_argument, NULL, 'd' }, { "hw", no_argument, NULL, 'w' },
+			{ "3d", required_argument, NULL, '3' }, { "hdmiclocksync", no_argument, NULL, 'y' },
+			{ "nohdmiclocksync", no_argument, NULL, 'z' }, { "refresh", no_argument, NULL, 'r' },
+			{ "sid", required_argument, NULL, 't' }, { "pos", required_argument, NULL, 'l' },
+			{ "loop", no_argument, NULL, 'L' }, { "font", required_argument, NULL, font_opt },
+			{ "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt },
+			{ "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt },
+			{ "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt },
+			{ "vol", required_argument, NULL, vol_opt}, { 0, 0, 0, 0 } };
 
 	int c;
 	std::string mode;
@@ -611,10 +640,17 @@ int main(int argc, char *argv[])
 		{
 		    case 'f':
 		        config.videosfolder = optarg;
+		        if (config.videosfolder[config.videosfolder.length() - 1] != '/')
+		        {
+		        	config.videosfolder.append("/");
+		        }
 		        break;
 		    case 'v':
 		        config.stopvideo = optarg;
 		        break;
+		    case vol_opt:
+		    	m_volume = atoi(optarg);
+		    	break;
 			case 'r':
 				m_refresh = true;
 				break;
@@ -741,6 +777,12 @@ int main(int argc, char *argv[])
 		goto do_exit;
 	}
 
+	if (!Exists(std::string(config.get_videosfolder())))
+	{
+		printf(std::string("Video folder " + config.get_videosfolder() + " not found (did you use an absolute path?). Exiting.\n").c_str());
+		goto do_exit;
+	}
+
 	reader_open_thread(&m_filename);
 
 	m_thread_player = true;
@@ -832,6 +874,9 @@ int main(int argc, char *argv[])
 			;
 		goto do_exit;
 	}
+
+	m_player_audio.SetCurrentVolume(m_volume);
+
 	{
 		std::vector < Subtitle > external_subtitles;
 		if (m_has_external_subtitles && !ReadSrt(m_external_subtitles_path, external_subtitles))
@@ -891,7 +936,7 @@ int main(int argc, char *argv[])
 				if (Exists(config.get_videosfolder() + netcommand.arg))
 				{
 					// Load file if needed
-					if (netcommand.arg != nextvideo)
+					if (netcommand.arg != nextvideo && !netcommand.arg.empty())
 					{
 						nextvideo = netcommand.arg;
 						pthread_join(m_omx_reader_thread, NULL);
@@ -989,6 +1034,17 @@ int main(int argc, char *argv[])
 			    netcommand.conn->writeData(ss.str());
 
 			    break;
+			}
+			case PIVT_LIST:
+			{
+	    		PiVT_SnifferData *psniffdata = new PiVT_SnifferData;
+	    		psniffdata->conn = netcommand.conn;
+	    		psniffdata->folder = config.videosfolder;
+
+	    		void * pvoidsd = (void *)psniffdata;
+
+	    		pthread_create(&pivt_listthread, NULL, sniffClips, pvoidsd);
+	    		break;
 			}
 			case PIVT_QUIT:
 			    printf("Lost a client.\r\n");
