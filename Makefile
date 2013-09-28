@@ -34,6 +34,7 @@ SRC=linux/XMemUtils.cpp \
 		pivt_components/PiVTConfig.cpp \
 		pivt_components/PiVTTCPConnection.cpp \
 		pivt_components/PiVTNetwork.cpp \
+		pivt_components/PiVTClipSniffer.cpp \
 		omxplayer.cpp \
 
 OBJS+=$(filter %.o,$(SRC:.cpp=.o))
