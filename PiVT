@@ -12,11 +12,7 @@ else
   FONT="fonts/FreeSans.ttf"
 fi
 
-if [ -e /usr/lib/omxplayer ]; then
-  export LD_LIBRARY_PATH=/opt/vc/lib:/usr/lib/omxplayer:$LD_LIBRARY_PATH 
-else
-  export LD_LIBRARY_PATH=$PWD/ffmpeg_compiled/usr/local/lib:/opt/vc/lib:$LD_LIBRARY_PATH
-fi
+export LD_LIBRARY_PATH=$PWD/ffmpeg_compiled/usr/local/lib:/opt/vc/lib:$LD_LIBRARY_PATH
 
 XRES=1920
 YRES=1080
