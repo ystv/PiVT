@@ -640,6 +640,10 @@ int main(int argc, char *argv[])
 		{
 		    case 'f':
 		        config.videosfolder = optarg;
+		        if (config.videosfolder[config.videosfolder.length() - 1] != '/')
+		        {
+		        	config.videosfolder.append("/");
+		        }
 		        break;
 		    case 'v':
 		        config.stopvideo = optarg;
@@ -770,6 +774,12 @@ int main(int argc, char *argv[])
 	if (!Exists(m_filename))
 	{
 		printf(std::string("Stop video " + m_filename + " not found (did you use an absolute path?). Exiting.\n").c_str());
+		goto do_exit;
+	}
+
+	if (!Exists(std::string(config.get_videosfolder())))
+	{
+		printf(std::string("Video folder " + config.get_videosfolder() + " not found (did you use an absolute path?). Exiting.\n").c_str());
 		goto do_exit;
 	}
 
