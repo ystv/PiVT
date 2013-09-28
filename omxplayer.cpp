@@ -117,6 +117,7 @@ bool m_has_audio = false;
 bool m_has_subtitle = false;
 float m_display_aspect = 0.0f;
 bool m_boost_on_downmix = false;
+long m_volume = 0;
 bool m_loop = false;
 double startpts = 0;
 
@@ -167,6 +168,7 @@ void print_usage()
 	printf("         -y / --hdmiclocksync           adjust display refresh rate to match video (default)\n");
 	printf("         -z / --nohdmiclocksync         do not adjust display refresh rate to match video\n");
 	printf("         -r / --refresh                 adjust framerate/resolution to video\n");
+	printf("              --vol                     set volume in millibels (default 0)\n");
 	printf("              --boost-on-downmix        boost volume when downmixing\n");
 	printf("              --align left/center       subtitle alignment (default: left)\n");
 	printf("              --win \"x1 y1 x2 y2\"       Set position of video window\n");
@@ -540,6 +542,7 @@ void run_loaded_video()
 		m_player_audio.Close();
 		m_player_audio.Open(m_hints_audio, m_av_clock, m_omx_reader, deviceString,
 				m_passthrough, m_use_hw_audio, m_boost_on_downmix, m_thread_player);
+		m_player_audio.SetCurrentVolume(m_volume);
 
 	}
 
@@ -613,6 +616,7 @@ int main(int argc, char *argv[])
 	const int lines_opt = 0x104;
 	const int pos_opt = 0x105;
 	const int boost_on_downmix_opt = 0x200;
+	const int vol_opt = 0x201;
 
 	struct option longopts[] = { { "info", no_argument, NULL, 'i' }, {"videofolder", required_argument, NULL, 'f'},
 			{"stopvideo", required_argument, NULL, 'v'}, { "help", no_argument, NULL, 'h' },
@@ -626,7 +630,7 @@ int main(int argc, char *argv[])
 			{ "font-size", required_argument, NULL, font_size_opt }, { "align", required_argument, NULL, align_opt },
 			{ "subtitles", required_argument, NULL, subtitles_opt }, { "lines", required_argument, NULL, lines_opt },
 			{ "win", required_argument, NULL, pos_opt }, { "boost-on-downmix", no_argument, NULL, boost_on_downmix_opt },
-			{ 0, 0, 0, 0 } };
+			{ "vol", required_argument, NULL, vol_opt}, { 0, 0, 0, 0 } };
 
 	int c;
 	std::string mode;
@@ -640,6 +644,9 @@ int main(int argc, char *argv[])
 		    case 'v':
 		        config.stopvideo = optarg;
 		        break;
+		    case vol_opt:
+		    	m_volume = atoi(optarg);
+		    	break;
 			case 'r':
 				m_refresh = true;
 				break;
@@ -857,6 +864,9 @@ int main(int argc, char *argv[])
 			;
 		goto do_exit;
 	}
+
+	m_player_audio.SetCurrentVolume(m_volume);
+
 	{
 		std::vector < Subtitle > external_subtitles;
 		if (m_has_external_subtitles && !ReadSrt(m_external_subtitles_path, external_subtitles))
