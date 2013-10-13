@@ -115,6 +115,7 @@ void PiVT_TCPConnection::handleIncomingData (
     	    helpstring << "PiVT Command Reference: " << std::endl;
     	    helpstring << "\t p FILENAME\t\tPlay specified file" << std::endl;
     	    helpstring << "\t l FILENAME\t\tLoad file in background" << std::endl;
+            helpstring << "\t u         \t\tUnload background file" << std::endl;
     	    helpstring << "\t s         \t\tStop playing (run stop video)" << std::endl;
     	    helpstring << "\t i         \t\tDisplay current status" << std::endl;
     	    helpstring << "\t g         \t\tDisplay list of files and durations" << std::endl;
