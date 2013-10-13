@@ -94,6 +94,9 @@ void PiVT_TCPConnection::handleIncomingData (
     	case 'l':
     		newdata.command = PIVT_LOAD;
     		break;
+    	case 'u':
+    		newdata.command = PIVT_UNLOAD;
+    		break;
     	case 's':
     		newdata.command = PIVT_STOP;
     		break;

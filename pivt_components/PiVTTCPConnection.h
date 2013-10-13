@@ -32,6 +32,7 @@
 enum PiVT_Command
 {
     PIVT_LOAD,
+    PIVT_UNLOAD,
     PIVT_PLAY,
     PIVT_STOP,
     PIVT_INFO,
