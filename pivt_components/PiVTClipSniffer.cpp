@@ -32,6 +32,49 @@
 
 #include "PiVTClipSniffer.h"
 
+void recurseFolder (std::string base, std::string stem, std::vector<std::string>& files);
+
+/*
+ * Recurse into folders looking for files. Expects base to always end with a forward slash
+ */
+void recurseFolder (std::string base, std::string stem,
+		std::vector<std::string>& files)
+{
+	DIR *d;
+	struct dirent *dir;
+
+	if (stem.length() > 0 && stem[stem.length()-1] != '/')
+	{
+		stem += "/";
+	}
+
+	std::string folder = base + stem;
+	d  = opendir(folder.c_str());
+	while ((dir = readdir(d)) != NULL)
+	{
+		// Skip the special directories
+		std::string file = dir->d_name;
+		if (file.compare(".") == 0 || file.compare("..") == 0)
+		{
+			continue;
+		}
+
+		struct stat st;
+
+		stat((folder + file).c_str(),&st);
+
+		if (S_ISREG (st.st_mode))
+		{
+			files.push_back(stem + file);
+		}
+		else if (S_ISDIR (st.st_mode))
+		{
+			// Recurse into the folder
+            recurseFolder(base, stem + file, files);
+		}
+	}
+}
+
 void * sniffClips (void *psniffdata)
 {
 	// Extract some data
@@ -39,26 +82,13 @@ void * sniffClips (void *psniffdata)
 
 	// List files in the directory
 	std::vector<std::string> files;
-    DIR *d;
-    struct dirent *dir;
-    d  = opendir(pd->folder.c_str());
-    while ((dir = readdir(d)) != NULL)
-    {
-        std::string file = dir->d_name;
 
-        struct stat st;
-        if (pd->folder[pd->folder.length()-1] != '/')
-        {
-        	pd->folder += "/";
-        }
+	if (pd->folder[pd->folder.length()-1] != '/')
+	{
+		pd->folder += "/";
+	}
 
-        stat((pd->folder + "/" + file).c_str(),&st);
-
-        if (S_ISREG (st.st_mode))
-        {
-            files.push_back(file);
-        }
-    }
+	recurseFolder(pd->folder, "", files);
 
     // Attempt to open each and grab the length
     std::vector<std::string> resultlines;
