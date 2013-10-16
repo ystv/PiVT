@@ -980,6 +980,13 @@ int main(int argc, char *argv[])
 				}
 				break;
 			}
+			case PIVT_UNLOAD:
+			{
+				nextvideo = config.get_stopvideo();
+				pthread_join(m_omx_reader_thread, NULL);
+				load_background_video(nextvideo);
+				break;
+			}
 			case PIVT_STOP:
 			{
 				// Load file if needed
