@@ -957,12 +957,12 @@ int main(int argc, char *argv[])
 					// Report some info
 					std::stringstream ss;
 					int length = m_omx_reader->GetStreamLength() / 1000.0f;
-					ss << "202 Playing " << netcommand.arg << " " << length << " seconds long";
+					ss << "202 Playing \"" << netcommand.arg << "\" " << length << " seconds long";
 					netcommand.conn->writeData(ss.str());
 				}
 				else
 				{
-					netcommand.conn->writeData("404 File: " + netcommand.arg + " not found!");
+					netcommand.conn->writeData("404 File: \"" + netcommand.arg + "\" not found!");
 				}
 				break;
 			}
@@ -976,7 +976,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					netcommand.conn->writeData("404 File: " + netcommand.arg + " not found!");
+					netcommand.conn->writeData("404 File: \"" + netcommand.arg + "\" not found!");
 				}
 				break;
 			}
@@ -1017,7 +1017,7 @@ int main(int argc, char *argv[])
 
 				if (currentvideo.compare(config.get_stopvideo()))
 				{
-					ss << "Playing " << currentvideo << ", ";
+					ss << "Playing \"" << currentvideo << "\", ";
 				}
 				else
 				{
@@ -1026,7 +1026,7 @@ int main(int argc, char *argv[])
 
 				if (config.get_stopvideo().compare(nextvideo))
 				{
-					ss << "Loaded " << nextvideo << ", ";
+					ss << "Loaded \"" << nextvideo << "\", ";
 				}
 				else
 				{
@@ -1142,7 +1142,7 @@ int main(int argc, char *argv[])
 			    {
 			        std::stringstream stopdata;
 			        int len = m_omx_reader->GetStreamLength() / 1000.0f;
-			        stopdata << "205 Playing " << currentvideo << " " << len << " seconds long";
+			        stopdata << "205 Playing \"" << currentvideo << "\" " << len << " seconds long";
 			        network.sendall(stopdata.str());
 			    }
 			}

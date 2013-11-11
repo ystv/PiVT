@@ -111,7 +111,7 @@ void * sniffClips (void *psniffdata)
     	// Assemble the response line
     	std::stringstream resp;
 
-    	resp << "206 " << filename << " " << (pFormatCtx->duration / AV_TIME_BASE) << " seconds";
+    	resp << "206 \"" << filename << "\" " << (pFormatCtx->duration / AV_TIME_BASE) << " seconds";
     	resultlines.push_back(resp.str());
 
     	avformat_close_input(&pFormatCtx);
