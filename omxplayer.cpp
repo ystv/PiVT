@@ -125,6 +125,9 @@ std::string threadfile = "";
 
 CRect DestRect = { 0, 0, 0, 0 };
 
+std::string nextvideo;
+std::string currentvideo;
+
 enum
 {
 	ERROR = -1, SUCCESS, ONEBYTE
@@ -564,7 +567,7 @@ void run_loaded_video()
 
 	m_av_clock->SetSpeed(DVD_PLAYSPEED_NORMAL);
 	m_av_clock->OMXStateExecute();
-	m_av_clock->OMXStart(0.0);
+	m_av_clock->OMXStart(startpts);
 
 }
 
@@ -756,8 +759,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	std::string nextvideo = config.get_stopvideo();
-    std::string currentvideo = config.get_stopvideo();
+	nextvideo = config.get_stopvideo();
+    currentvideo = config.get_stopvideo();
 
 	if (m_has_font && !Exists(m_font_path))
 	{
@@ -1034,7 +1037,7 @@ int main(int argc, char *argv[])
 				}
 
 				double pts = m_av_clock->GetPTS();
-			    int remain = int(float((m_omx_reader->GetStreamLength()/1000.0f) - (pts / DVD_TIME_BASE)));
+			    float remain = (float((m_omx_reader->GetStreamLength()/1000.0f) - (pts / DVD_TIME_BASE)));
 
 			    ss << remain << " seconds remain";
 
