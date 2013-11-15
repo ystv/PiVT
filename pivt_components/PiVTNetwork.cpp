@@ -59,7 +59,8 @@ void PiVT_Network::handleAccept (boost::shared_ptr<PiVT_TCPConnection> new_conne
 
 PiVT_CommandData PiVT_Network::tick ()
 {
-	m_io_service->poll();
+	m_io_service->poll_one();
+	m_io_service->reset();
 
 	PiVT_CommandData temp;
 
