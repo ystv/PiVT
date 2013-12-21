@@ -66,7 +66,7 @@ def get_omx_duration(item):
     try:
         data = subprocess.check_output(_OMX_COMMAND.format(item), shell=True, stderr=subprocess.STDOUT)
     except:
-    logging.exception('Failed to get duration for {0}'.format(item))
+        logging.exception('Failed to get duration for {0}'.format(item))
         return 0
     
     # Try and grab a duration by regex
