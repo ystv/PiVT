@@ -1,4 +1,4 @@
-from OMXControl import OMXControl 
+from omxcontrol import OMXControl
 from time import sleep
 if __name__ == '__main__':
     # Launch a simple player

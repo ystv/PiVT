@@ -1,5 +1,4 @@
 from time import sleep
-from pprint import pprint
 import argparse
 import yaml
 import os
@@ -7,9 +6,8 @@ import shlex
 import logging
 import sys
 
-#from OMXControl import OMXControl 
-#from PiVTNetwork import PiVTNetwork
-from PiVTNetwork import PiVTNetwork
+from pivtgapless import PiVTGaplessVideo
+from pivtnetwork import PiVTNetwork
 
 """PiVT video player system
 
@@ -114,11 +112,13 @@ if __name__ == '__main__':
     videofolder, playlist, port, omxcommands = parse_config(args)
     logging.info("Configuration loaded")
 
+    # Load up the gapless video player class
+    player = PiVTGaplessVideo(playlist)
+
     if port != None:
         # Network server startup
         network = PiVTNetwork(port, player)
     
-    # Load up some video players
     # Main loop
     logging.debug("Begin main loop")
     while True:
@@ -126,6 +126,9 @@ if __name__ == '__main__':
         if port != None:
             network.poll()
             
+        # Poll video end status and handle update
+        player.poll()
+        
         # Sleep 20s to avoid thrashing CPU
         sleep(0.02)
         

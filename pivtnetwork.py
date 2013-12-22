@@ -60,4 +60,5 @@ class PiVTNetwork(asyncore.dispatcher):
                               addr[0], addr[1])
     
     def poll(self):
+        """Wrapper so the top-level class doesn't need asyncore"""
         asyncore.poll(0.1)
