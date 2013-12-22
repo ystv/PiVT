@@ -9,6 +9,7 @@ import sys
 
 #from OMXControl import OMXControl 
 #from PiVTNetwork import PiVTNetwork
+from PiVTNetwork import PiVTNetwork
 
 """PiVT video player system
 
@@ -16,6 +17,7 @@ This is the main file that runs the app - see README.md for more info
 
 """
 
+LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 # Helper function so config parsing is easier
 def default(x, e, y):
@@ -103,14 +105,29 @@ def parse_config(argparser):
     return (videofolder, playlist, port, omxcommands)
 
 if __name__ == '__main__':
+    # Startup logger
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+    logging.info("PiVT starting up")
+    
     # Load configuration data
     args = parse_commandline()
     videofolder, playlist, port, omxcommands = parse_config(args)
+    logging.info("Configuration loaded")
 
     if port != None:
         # Network server startup
-        pass
+        network = PiVTNetwork(port, player)
     
     # Load up some video players
+    # Main loop
+    logging.debug("Begin main loop")
+    while True:
+        # Service active network connections if up
+        if port != None:
+            network.poll()
+            
+        # Sleep 20s to avoid thrashing CPU
+        sleep(0.02)
+        
     
     sys.exit(0)
