@@ -1,0 +1,31 @@
+---
+# PiVT Configuration File
+
+# Note that PiVT can be operated in two modes, either as the network-controlled
+# video server it was designed as or in alternate 'playlist' mode (or both, 
+# just pick up the playlist where it left off)
+
+# The three dashes at the start of the file are important, please leave them in!
+
+# Folder where video files can be found (--folder). Absolute paths recommended!
+videofolder: /videos
+
+# Video to play when nothing else is running (--stopvideo). Ignored when a 
+# playlist is set up
+stopvideo:   /videos/stopvideo.mp4
+
+# Port for the network interface to PiVTDesktop (--port). Leave blank to disable 
+# network control (only in playlist mode)
+port: 9815
+
+# Additional arguments to supply to OMXPlayer (--omxargs)
+omxargs: --win "0 0 1920 1080"
+
+# List of playlist files to be played in a loop. Each item must start with a 
+# hyphen (-) and be indented 4 spaces. Leave empty for network-controlled mode.
+playlist:
+# Example (will expand to /videos/myawesomevideo.mp4 if videofolder is /videos):
+#    - myawesomevideo.mp4 
+
+# The dots are important, please leave them here
+...
