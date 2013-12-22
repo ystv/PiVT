@@ -10,7 +10,7 @@ _OMX_COMMAND = "/usr/bin/omxplayer -i {0}"
 _DURATION_REXP = re.compile(r".*Duration: (\d\d:\d\d:\d\d.\d\d)")
 
 
-class PiVTFileList():
+class PiVTFileList(object):
     def __init__(self, videopath, cycletime):
         self._videopath = videopath
         self._cycletime = cycletime
