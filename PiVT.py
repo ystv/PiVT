@@ -5,6 +5,7 @@ import os
 import shlex
 import logging
 import sys
+import atexit
 
 from pivtgapless import PiVTGaplessVideo
 from pivtnetwork import PiVTNetwork
@@ -113,24 +114,33 @@ if __name__ == '__main__':
     logging.info("Configuration loaded")
 
     # Load up the gapless video player class
-    player = PiVTGaplessVideo(playlist)
+    player = PiVTGaplessVideo(playlist, videofolder, omxcommands)
+    atexit.register(player.shutdown)
 
     if port != None:
         # Network server startup
-        network = PiVTNetwork(port, player)
+        try:
+            network = PiVTNetwork(port, player)
+        except:
+            logging.exception("Failed to start network server!")
+            sys.exit(1)
     
     # Main loop
     logging.debug("Begin main loop")
-    while True:
-        # Service active network connections if up
-        if port != None:
-            network.poll()
+    
+    try:
+        while True:
+            # Service active network connections if up
+            if port != None:
+                network.poll()
+                
+            # Poll video end status and handle update
+            player.poll()
             
-        # Poll video end status and handle update
-        player.poll()
-        
-        # Sleep 20s to avoid thrashing CPU
-        sleep(0.02)
+            # Sleep 20ms to avoid thrashing CPU
+            sleep(0.02)
+    except KeyboardInterrupt:
+        player.shutdown()
         
     
     sys.exit(0)

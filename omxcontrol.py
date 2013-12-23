@@ -14,13 +14,14 @@ class OMXControl(object):
     _status = -1
     
 
-    def __init__(self, fileargs):
+    def __init__(self, fileargs, duration = None):
         logging.basicConfig(level=logging.DEBUG)
-        logging.info("Starting OMXControl...")
+        logging.debug("Starting OMXControl with args %s", repr(fileargs))
         
         self._omxinstance = pexpect.spawn(self._PLAYER_COMMAND, fileargs, timeout=None)
 
         # Set up some state vars
+        self._duration = duration
         self._position = 0
         self._status = -2
         
@@ -54,6 +55,12 @@ class OMXControl(object):
     def get_position(self):
         return self._position
     
+    def get_remaining(self):
+        if self._duration != None:
+            return self._duration - self._position
+        else:
+            return ValueError
+    
     # Returns true when ready for playback
     def get_ready(self):
         if self._status == 0:
@@ -70,8 +77,8 @@ class OMXControl(object):
                 break
 
             matchline = instance.expect(['Video codec', 'have a nice day', self._POSITION_REGEX, pexpect.EOF, pexpect.TIMEOUT])
-            if matchline > 3:
-                logging.debug("No data")
+            if matchline > 2:
+                logging.debug("No data: %s", repr(self))
                 # Zero length means something almost certainly went wrong. Die
                 if instance.isalive():
                     instance.write(self._STOP_COMMAND)
@@ -82,6 +89,8 @@ class OMXControl(object):
             # Was it the shutdown message?
             if 1 == matchline:
                 self._status = -1
+                self._position = self._duration
+                logging.debug("Player shutdown")
                 instance.kill(0)
                 break
             

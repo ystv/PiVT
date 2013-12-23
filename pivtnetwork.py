@@ -1,5 +1,4 @@
 import logging
-import sys
 import asyncore
 import asynchat
 import socket
@@ -38,14 +37,10 @@ class PiVTClientConn(asynchat.async_chat):
 class PiVTNetwork(asyncore.dispatcher):
     """Network setup wrapper to open ports etc"""
     def __init__(self, port, controller):
-        try:
-            asyncore.dispatcher.__init__(self)
-            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.bind(("", port))
-            self.listen(5)
-        except:
-            logging.exception("Failed to setup network server")
-            sys.exit(3)    
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.bind(("", port))
+        self.listen(5) 
         self.controller = controller
         
         logging.info("Network interface opened on port %d", port)
