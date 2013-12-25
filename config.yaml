@@ -19,13 +19,21 @@ stopvideo:   /videos/stopvideo.mp4
 port: 9815
 
 # Additional arguments to supply to OMXPlayer (--omxargs)
-omxargs: --win "0 0 1920 1080"
+omxargs: --win "0 0 1920 1080" --blank -z
 
 # List of playlist files to be played in a loop. Each item must start with a 
 # hyphen (-) and be indented 4 spaces. Leave empty for network-controlled mode.
 playlist:
 # Example (will expand to /videos/myawesomevideo.mp4 if videofolder is /videos):
 #    - myawesomevideo.mp4 
+
+# Remaining configuration items are internal and can probably remain as-is
+
+# Path to OMXPlayer binary
+omxplayer: /usr/bin/omxplayer
+
+# Period to update internal file list in seconds
+listcycletime: 5
 
 # The dots are important, please leave them here
 ...

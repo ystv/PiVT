@@ -8,20 +8,23 @@ class OMXControl(object):
     _PLAY_TOGGLE = 'p'
     _STOP_COMMAND = 'q'
     _POSITION_REGEX = re.compile(r'M:\s*([\d.]+)')
-    _PLAYER_COMMAND = '/usr/bin/omxplayer'
     
     # Status options: 1 - Play, 0 - Pause, -1 - Not loaded, -2 - Loading
     _status = -1
     
+    # Name of playing file, stored to help calling class
+    filename = ""
+    
 
-    def __init__(self, fileargs, duration = None):
+    def __init__(self, fileargs, duration = None, binpath = '/usr/bin/omxplayer'):
         logging.basicConfig(level=logging.DEBUG)
         logging.debug("Starting OMXControl with args %s", repr(fileargs))
         
-        self._omxinstance = pexpect.spawn(self._PLAYER_COMMAND, fileargs, timeout=None)
+        self._omxinstance = pexpect.spawn(binpath, fileargs, timeout=None)
+        self._omxinstance.logfile = open("{0}.log".format(repr(self)), 'w')
 
         # Set up some state vars
-        self._duration = duration
+        self.duration = duration
         self._position = 0
         self._status = -2
         
@@ -56,14 +59,19 @@ class OMXControl(object):
         return self._position
     
     def get_remaining(self):
-        if self._duration != None:
-            return self._duration - self._position
+        if self.duration != None:
+            return self.duration - self._position
         else:
-            return ValueError
+            raise ValueError
     
-    # Returns true when ready for playback
     def get_ready(self):
+        """Returns true when ready for playback"""
         if self._status == 0:
+            return True
+
+    def get_alive(self):
+        """Returns true if the player has not crashed"""
+        if self._status != -1:
             return True
 
     # Internally monitor the player and update status
@@ -89,7 +97,7 @@ class OMXControl(object):
             # Was it the shutdown message?
             if 1 == matchline:
                 self._status = -1
-                self._position = self._duration
+                self._position = self.duration
                 logging.debug("Player shutdown")
                 instance.kill(0)
                 break

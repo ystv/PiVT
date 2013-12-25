@@ -6,7 +6,7 @@ import re
 import datetime
 from time import sleep
 
-_OMX_COMMAND = "/usr/bin/omxplayer -i {0}"
+_OMX_COMMAND = "/usr/bin/omxplayer"
 _DURATION_REXP = re.compile(r".*Duration: (\d\d:\d\d:\d\d.\d\d)")
 
 
@@ -21,14 +21,20 @@ class PiVTFileList(object):
         self._updatethread.start()
 
     def get_file_listing(self):
-        # Extract the relevant bits of the list and format for output
-        resulttemplate = '206 "{0}" {1} seconds \n'
+        """Extract the relevant bits of the list and format for output"""
+        resulttemplate = '206 "{0}" {1} seconds \r\n'
         resultstring = ''
         for item in self._filelist:
             resultstring += resulttemplate.format(item, self._filelist[item])
+        resultstring += '205 File listing complete\r\n'
         return resultstring
     
     def get_file_duration(self, path):
+        """Get duration of a single file
+        
+        Returns -1 if duration not yet available or -2 if file does not exist
+        
+        """
         duration = -1
         try:
             duration = self._filelist[path]
@@ -42,13 +48,13 @@ class PiVTFileList(object):
         self._updatethread.join()
 
     def _update_list_thread(self):
+        logging.info("Launching file list update thread for %s", self._videopath)
         while self._runupdates:
             # List files in the directory
             matches = []
             for root, dirs, files in os.walk(self._videopath):
                 for filename in files:
                     matches.append(os.path.join(root.replace(self._videopath, '', 1), filename))
-
             # Remove missing items
             for item in (set(self._filelist) - set(matches)):
                 self._filelist.pop(item)
@@ -57,14 +63,13 @@ class PiVTFileList(object):
             for item in (set(matches) - set(self._filelist)):
                 duration = get_omx_duration(os.path.join(self._videopath, item))
                 self._filelist[item] = duration             
-
             # Limit resource usage
             sleep(self._cycletime)
 
 def get_omx_duration(item):
     # Call the player with the offending command
     try:
-        data = subprocess.check_output(_OMX_COMMAND.format(item), shell=True, stderr=subprocess.STDOUT)
+        data = subprocess.check_output([_OMX_COMMAND, '-i', item], shell=False, stderr=subprocess.STDOUT)
     except:
         logging.exception('Failed to get duration for {0}'.format(item))
         return 0

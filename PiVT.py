@@ -9,6 +9,7 @@ import atexit
 
 from pivtgapless import PiVTGaplessVideo
 from pivtnetwork import PiVTNetwork
+from pivtfilelist import PiVTFileList
 
 """PiVT video player system
 
@@ -54,6 +55,8 @@ def parse_config(argparser):
     playlist = None
     port = None
     omxcommands = ['-s', '--no-osd']
+    omxpath = '/usr/bin/omxplayer'
+    cycletime = 30
     
     # Read a configuration file
     if argparser.configfile != None:
@@ -66,6 +69,8 @@ def parse_config(argparser):
             omxstring = default(lambda: configdata['omxargs'], KeyError, '')
             omxcommands += shlex.split(omxstring)
             playlist = default(lambda: configdata['playlist'], IndexError, None)
+            omxpath = default(lambda: configdata['omxplayer'], IndexError, '/usr/bin/omxplayer')
+            cycletime = default(lambda: configdata['listcycletime'], IndexError, 30)
     
         except:
             logging.exception('Unable to load requested config file!')
@@ -101,7 +106,10 @@ def parse_config(argparser):
     if playlist == None:
         playlist = [stopvideo, ]
         
-    return (videofolder, playlist, port, omxcommands)
+    # Standardise video folder path
+    videofolder = os.path.normpath(videofolder) + os.sep
+        
+    return (videofolder, playlist, port, omxcommands, omxpath, cycletime)
 
 if __name__ == '__main__':
     # Startup logger
@@ -110,19 +118,24 @@ if __name__ == '__main__':
     
     # Load configuration data
     args = parse_commandline()
-    videofolder, playlist, port, omxcommands = parse_config(args)
+    videofolder, playlist, port, omxcommands, omxpath, cycletime = parse_config(args)
     logging.info("Configuration loaded")
 
     # Load up the gapless video player class
-    player = PiVTGaplessVideo(playlist, videofolder, omxcommands)
+    player = PiVTGaplessVideo(playlist, videofolder, omxcommands, omxpath)
     atexit.register(player.shutdown)
 
     if port != None:
         # Network server startup
         try:
-            network = PiVTNetwork(port, player)
+            filelist = PiVTFileList(videofolder, cycletime)
+            atexit.register(filelist.kill_updates)
+            network = PiVTNetwork(port, player, filelist)
+            atexit.register(network.shutdown)
         except:
             logging.exception("Failed to start network server!")
+            player.shutdown()
+            filelist.kill_updates()
             sys.exit(1)
     
     # Main loop
@@ -130,17 +143,24 @@ if __name__ == '__main__':
     
     try:
         while True:
+            # Poll video end status and handle update
+            if player.poll() == True:
+                active, loaded, duration, remain, auto = player.get_info()
+                if active != None:
+                    network.broadcast("204 Playing \"{0}\" {1} seconds long Auto {2}\r\n".format(active, remain, repr(auto)))
+                else:
+                    network.broadcast("204 Stopped Auto {0}\r\n".format(repr(auto)))
+            
             # Service active network connections if up
             if port != None:
                 network.poll()
-                
-            # Poll video end status and handle update
-            player.poll()
             
             # Sleep 20ms to avoid thrashing CPU
             sleep(0.02)
     except KeyboardInterrupt:
         player.shutdown()
-        
+        if network != None:
+            filelist.kill_updates()
+            network.shutdown()        
     
     sys.exit(0)
