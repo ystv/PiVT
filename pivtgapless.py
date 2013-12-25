@@ -2,6 +2,7 @@ import logging
 import os
 import pivtfilelist
 import sys
+from time import sleep
 
 from omxcontrol import OMXControl
 
@@ -38,9 +39,10 @@ class PiVTGaplessVideo(object):
     playingduration = 0
     nextduration = 0
     automode = False
+    _cleanloop = False
 
     
-    def __init__(self, playlist, videofolder, omxargs, omxpath):
+    def __init__(self, playlist, videofolder, omxargs, omxpath, cleanloop):
         """Player setup
         
         Grabs durations for playlist contents, loads players, starts playback
@@ -56,6 +58,7 @@ class PiVTGaplessVideo(object):
         self._omxpath = omxpath
         self._omxargs = omxargs
         self._videofolder = videofolder
+        self._cleanloop = cleanloop
         
         # Get durations for everything in the playlist
         logging.info("Getting playlist item durations...")
@@ -65,13 +68,18 @@ class PiVTGaplessVideo(object):
                 self._playlist.append([item, duration])
 
         try:
-            # Load the main and second videos
-            self._playing = self._load_internal(self._playlist[0][0], 
-                                                self._playlist[0][1])
-            self._advance_playlist()
-            self._stopvideo = self._load_internal(self._playlist[self._index][0],
-                                                  self._playlist[self._index][1])
-            self._advance_playlist()
+            if self._cleanloop == True and len(self._playlist) == 1:
+                self._stopvideo = self._load_internal(self._playlist[0][0], 
+                                    self._playlist[0][1], ['--loop',])
+                self._playing = self._stopvideo
+            else:        
+                # Load the main and second videos
+                self._playing = self._load_internal(self._playlist[0][0], 
+                                                    self._playlist[0][1])
+                self._advance_playlist()
+                self._stopvideo = self._load_internal(self._playlist[self._index][0],
+                                                      self._playlist[self._index][1])
+                self._advance_playlist()
             
             if self._playing == None or self._stopvideo == None:
                 logging.error("Failed to load the first two videos. Shutting down")
@@ -103,7 +111,7 @@ class PiVTGaplessVideo(object):
             self._loader.stop()
         
         self._loader = self._load_internal(filename, duration)
-        
+
         if self._loader != None:
             if self.automode == True:
                 self._nextvideo = self._loader
@@ -116,6 +124,7 @@ class PiVTGaplessVideo(object):
         if self._loader != None:
             self._loader.stop()   
             self._loader = None
+            self._nextvideo = self._stopvideo
     
     def play(self, filename=None, duration=None):
         """Play a previously loaded file immediately or a new one after load"""
@@ -130,12 +139,18 @@ class PiVTGaplessVideo(object):
                 self._nextvideo = self._playing
                 self._playing = self._loader
                 self._loader = None
-                
+
                 self._nextvideo.pause()
-                self._playing.play()
+                self._playing.play()               
 
                 self._nextvideo.stop()
+                
+                if self._cleanloop == True:
+                    self._stopvideo = self._load_internal(self._playlist[0][0], 
+                                      self._playlist[0][1], ['--loop',])
+                    
                 self._nextvideo = self._stopvideo
+
                 return 0
             else:
                 logging.error("Video file %s not ready", self._loader.filename)
@@ -159,16 +174,17 @@ class PiVTGaplessVideo(object):
         preserve.pause()
         preserve.stop()
         
-        # Load another video
-        while True:
-            self._stopvideo = self._load_internal(self._playlist[self._index][0], 
-                                                  self._playlist[self._index][1])
-            if self._stopvideo != None:
-                break
-            else:
-                logging.error("Loading new stopvideo failed, retrying")
-        self._nextvideo = self._stopvideo
-        self._advance_playlist()
+        if self._cleanloop == False:
+            # Load another video
+            while True:
+                self._stopvideo = self._load_internal(self._playlist[self._index][0], 
+                                                      self._playlist[self._index][1])
+                if self._stopvideo != None:
+                    break
+                else:
+                    logging.error("Loading new stopvideo failed, retrying")
+            self._nextvideo = self._stopvideo
+            self._advance_playlist()
         
     def get_info(self):
         if self._playing.filename != self._stopvideo.filename:
@@ -194,7 +210,8 @@ class PiVTGaplessVideo(object):
     
     def poll(self):
         """Check if the current file has ended, and start next if it has"""
-        if self._playing.get_remaining() <= REMAINING_THRESHOLD or self._playing.get_ready < 0:
+        if self._playing.get_remaining() <= REMAINING_THRESHOLD and self._cleanloop == False:
+            
             logging.info("Advancing. Loading %s as next", self._playlist[self._index][0])
                             
             # Update internal state machine
@@ -229,13 +246,28 @@ class PiVTGaplessVideo(object):
             self._nextvideo = self._stopvideo
             # Marker that something happened
             return True
+        elif self._cleanloop == True and self._playing != self._stopvideo:
+            if self._playing.get_remaining() <= REMAINING_THRESHOLD:
+                current = self._playing
+                self._playing = self._nextvideo
+                self._playing.play()
+                
+                if self._nextvideo == self._loader:
+                    self._loader = None
+                else:
+                    self._nextvideo = self._stopvideo
+                
+                while current.get_alive() == True:
+                    pass
+                
+                return True
         else:
             return False
             pass
        
-    def _load_internal(self, filename, duration):
+    def _load_internal(self, filename, duration, extraflags=[]):
         """Wrap up the boilerplate to open a new file and wait for readiness"""
-        argsline = self._omxargs + [self.fullpath(filename)]
+        argsline = self._omxargs + [self.fullpath(filename)] + extraflags
         newvideo = OMXControl(argsline, duration, self._omxpath)
         newvideo.filename = filename
         

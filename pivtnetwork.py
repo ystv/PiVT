@@ -52,7 +52,7 @@ class PiVTClientConn(asynchat.async_chat):
     
         # Identify and process as appropriate
         if splits[0] == 'q':
-            self.push("Goodbye!")
+            self.push("Goodbye!\r\n\r\n")
             self.close_when_done()
         elif splits[0] == 'h':
             self.push(HELPSTRING)

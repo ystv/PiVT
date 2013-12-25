@@ -57,6 +57,7 @@ def parse_config(argparser):
     omxcommands = ['-s', '--no-osd']
     omxpath = '/usr/bin/omxplayer'
     cycletime = 30
+    cleanloop = False
     
     # Read a configuration file
     if argparser.configfile != None:
@@ -71,6 +72,7 @@ def parse_config(argparser):
             playlist = default(lambda: configdata['playlist'], IndexError, None)
             omxpath = default(lambda: configdata['omxplayer'], IndexError, '/usr/bin/omxplayer')
             cycletime = default(lambda: configdata['listcycletime'], IndexError, 30)
+            cleanloop = default(lambda: configdata['cleanloop'], IndexError, False)
     
         except:
             logging.exception('Unable to load requested config file!')
@@ -100,7 +102,9 @@ def parse_config(argparser):
         stopvideo = os.path.join(videofolder, stopvideo)
     if stopvideo != None and playlist != None:
         logging.warn('Ignoring redundant stopvideo as a playlist was set')    
-    
+    if cleanloop == True and playlist != None:
+        logging.warn('Ignoring cleanloop as playlist set')
+        cleanloop = False
         
     # Set up single item playlist for stopvideo if needed
     if playlist == None:
@@ -109,7 +113,7 @@ def parse_config(argparser):
     # Standardise video folder path
     videofolder = os.path.normpath(videofolder) + os.sep
         
-    return (videofolder, playlist, port, omxcommands, omxpath, cycletime)
+    return (videofolder, playlist, port, omxcommands, omxpath, cycletime, cleanloop)
 
 if __name__ == '__main__':
     # Startup logger
@@ -118,11 +122,11 @@ if __name__ == '__main__':
     
     # Load configuration data
     args = parse_commandline()
-    videofolder, playlist, port, omxcommands, omxpath, cycletime = parse_config(args)
+    videofolder, playlist, port, omxcommands, omxpath, cycletime, cleanloop = parse_config(args)
     logging.info("Configuration loaded")
 
     # Load up the gapless video player class
-    player = PiVTGaplessVideo(playlist, videofolder, omxcommands, omxpath)
+    player = PiVTGaplessVideo(playlist, videofolder, omxcommands, omxpath, cleanloop)
     atexit.register(player.shutdown)
 
     if port != None:

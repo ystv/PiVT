@@ -2,6 +2,7 @@ import threading
 import re
 import logging
 import pexpect
+import os
 
 class OMXControl(object):
 
@@ -20,8 +21,8 @@ class OMXControl(object):
         logging.basicConfig(level=logging.DEBUG)
         logging.debug("Starting OMXControl with args %s", repr(fileargs))
         
+        os.chdir(os.path.dirname(binpath))
         self._omxinstance = pexpect.spawn(binpath, fileargs, timeout=None)
-        self._omxinstance.logfile = open("{0}.log".format(repr(self)), 'w')
 
         # Set up some state vars
         self.duration = duration
