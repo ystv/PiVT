@@ -8,7 +8,7 @@ from time import sleep
 """Networking code for PiVT system"""
 
 # How often to poll videopath for new files, in seconds
-CYCLE_TIME = 30
+CYCLE_TIME = 10
 
 HELPSTRING = ("PiVT Command Reference: \r\n" 
                 "\t p         \t\tPlay loaded file\r\n" 
@@ -79,6 +79,8 @@ class PiVTClientConn(asynchat.async_chat):
                     ret = self.controller.load(splits[1], duration)
                     if ret != 0:
                         self.push("500 {0}\r\n".format(ret))
+                    else:
+                        self.push('203 Loaded "{0}"\r\n'.format(splits[1]))
         elif splits[0] == 'u':
             self.controller.unload()
         elif splits[0] == 's':

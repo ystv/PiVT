@@ -17,7 +17,8 @@ This is the main file that runs the app - see README.md for more info
 
 """
 
-LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
+LOG_FORMAT = "%(asctime)s:%(levelname)s:%(message)s"
+LOG_LEVEL = logging.INFO
 
 # Helper function so config parsing is easier
 def default(x, e, y):
@@ -58,6 +59,7 @@ def parse_config(argparser):
     omxpath = '/usr/bin/omxplayer'
     cycletime = 30
     cleanloop = False
+    logfile = None
     
     # Read a configuration file
     if argparser.configfile != None:
@@ -73,6 +75,7 @@ def parse_config(argparser):
             omxpath = default(lambda: configdata['omxplayer'], IndexError, '/usr/bin/omxplayer')
             cycletime = default(lambda: configdata['listcycletime'], IndexError, 30)
             cleanloop = default(lambda: configdata['cleanloop'], IndexError, False)
+            logfile = default(lambda: configdata['logfile'], IndexError, None)
     
         except:
             logging.exception('Unable to load requested config file!')
@@ -113,16 +116,27 @@ def parse_config(argparser):
     # Standardise video folder path
     videofolder = os.path.normpath(videofolder) + os.sep
         
-    return (videofolder, playlist, port, omxcommands, omxpath, cycletime, cleanloop)
+    return (videofolder, playlist, port, omxcommands, omxpath, cycletime, 
+            cleanloop, logfile)
 
-if __name__ == '__main__':
+def main():
     # Startup logger
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+    logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
     logging.info("PiVT starting up")
     
     # Load configuration data
     args = parse_commandline()
-    videofolder, playlist, port, omxcommands, omxpath, cycletime, cleanloop = parse_config(args)
+    videofolder, playlist, port, omxcommands, omxpath, cycletime, cleanloop, logfile = parse_config(args)
+    
+    # Reconfigure logging if needed
+    if logfile != None:
+        filehandler = logging.FileHandler(logfile)
+        filehandler.setLevel(LOG_LEVEL)
+        formatter = logging.Formatter(LOG_FORMAT)
+        filehandler.setFormatter(formatter)
+        logging.getLogger('').addHandler(filehandler)
+        logging.info("Setting up logging to %s", logfile)
+    
     logging.info("Configuration loaded")
 
     # Load up the gapless video player class
@@ -167,4 +181,8 @@ if __name__ == '__main__':
             filelist.kill_updates()
             network.shutdown()        
     
+    
+if __name__ == '__main__':
+    main()
     sys.exit(0)
+    

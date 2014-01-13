@@ -136,16 +136,19 @@ class PiVTGaplessVideo(object):
         
         try:    
             if self._loader.get_ready() == True:
-                self._nextvideo = self._playing
+                current = self._playing
                 self._playing = self._loader
                 self._loader = None
 
-                self._nextvideo.pause()
+                current.pause()
                 self._playing.play()               
 
-                self._nextvideo.stop()
+                current.stop()
                 
                 if self._cleanloop == True:
+                    if self._stopvideo != current:
+                        self._stopvideo.stop()
+                        
                     self._stopvideo = self._load_internal(self._playlist[0][0], 
                                       self._playlist[0][1], ['--loop',])
                     

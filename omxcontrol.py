@@ -3,12 +3,15 @@ import re
 import logging
 import pexpect
 import os
+import datetime
+
 
 class OMXControl(object):
 
     _PLAY_TOGGLE = 'p'
     _STOP_COMMAND = 'q'
     _POSITION_REGEX = re.compile(r'M:\s*([\d.]+)')
+    _LOG_OMX = True
     
     # Status options: 1 - Play, 0 - Pause, -1 - Not loaded, -2 - Loading
     _status = -1
@@ -21,8 +24,13 @@ class OMXControl(object):
         logging.basicConfig(level=logging.DEBUG)
         logging.debug("Starting OMXControl with args %s", repr(fileargs))
         
+        cwd = os.getcwd()
         os.chdir(os.path.dirname(binpath))
         self._omxinstance = pexpect.spawn(binpath, fileargs, timeout=None)
+		
+        if self._LOG_OMX == True:
+            os.chdir(cwd)
+            self._omxinstance.logfile = open("omxlog-{0}.log".format(datetime.datetime.now()), 'w+')
 
         # Set up some state vars
         self.duration = duration

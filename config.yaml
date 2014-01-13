@@ -27,6 +27,9 @@ playlist:
 # Example (will expand to /videos/myawesomevideo.mp4 if videofolder is /videos):
 #    - myawesomevideo.mp4 
 
+# Path to log file
+logfile: pivtlog.log
+
 # Remaining configuration items are internal and can probably remain as-is
 
 # Path to OMXPlayer binary

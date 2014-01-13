@@ -7,16 +7,23 @@ seamless(-ish) playback and network control.
 Written in Python, two modes are provided, either network-controlled or playlist
 mode. In network-controlled mode, a video is looped continuously until commands
 are received from a simple telnet interface (connect and press `h <ENTER>` for
-a list of the commands). A .NET client, PiVTDesktop is available at
+a list of the commands). A client, PiVTDesktop is available at
 https://github.com/YSTV/PiVTDesktop
 
 Playlist mode takes a simple playlist from the configuration file and loops it,
 for example for digital signage applications.
 
-Downloading OMXPlayer
+Downloading PiVT
 ---------------------
 
     git clone git://github.com/YSTV/PiVT.git
+    
+Prerequisites
+------------------
+The YAML and pexpect modules for Python are required for PiVT. For Raspbian,
+run something like this to install them:
+    sudo apt-get install python-pexpect python-yaml
+
 
 Configuration
 -----------------
@@ -42,6 +49,12 @@ https://github.com/stewiem2000/omxplayer/tree/seamless-looping
 This can be a little temperamental, but means the stopvideo will seamlessly
 restart at the end provided the source video is seamless, by continually
 looping it in the background.
+
+Daemonise
+-----------
+    sudo python PiVTDaemon.py start --config /absolute/path/to/file.yaml
+This will start PiVT as a daemon and return immediately, it will run in the 
+background
 
 OMXPlayer
 ---------------
