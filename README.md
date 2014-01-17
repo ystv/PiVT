@@ -31,7 +31,8 @@ For smooth video playback, at least 128MB RAM must be assigned to the GPU, use
 Configuration
 -----------------
 Configuration can either be supplied on the command line or within a YAML
-configuration file. A sample, config.yaml, is provided.
+configuration file. A sample, config.yaml, is provided. At least one valid
+playlist item or stopvideo is required so something is always played.
 
 To specify arguments with the command line, say `python PiVT.py --help` 
 for a full listing of command line options. It is not possible to set some
@@ -60,6 +61,9 @@ background
 
 Changelog
 ------------
+
+## v2.0.1 (18/01/2014) ##
+- Added a more helpful error message when no stopvideo/playlist video could be loaded at all
 
 ## v2.0 (16/01/2014) ##
 - Complete rewrite to hook OMXPlayer using pexpect and Python

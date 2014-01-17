@@ -67,6 +67,10 @@ class PiVTGaplessVideo(object):
             if duration > 0:
                 self._playlist.append([item, duration])
 
+		if len(self._playlist) < 1:
+			logging.error("Unable to read the stopvideo or any playlist items. Shutting down")
+			raise Exception
+				
         try:
             if self._cleanloop == True and len(self._playlist) == 1:
                 self._stopvideo = self._load_internal(self._playlist[0][0], 
