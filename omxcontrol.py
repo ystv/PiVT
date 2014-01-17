@@ -11,7 +11,7 @@ class OMXControl(object):
     _PLAY_TOGGLE = 'p'
     _STOP_COMMAND = 'q'
     _POSITION_REGEX = re.compile(r'M:\s*([\d.]+)')
-    _LOG_OMX = True
+    _LOG_OMX = False
     
     # Status options: 1 - Play, 0 - Pause, -1 - Not loaded, -2 - Loading
     _status = -1
