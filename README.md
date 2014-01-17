@@ -58,6 +58,28 @@ Daemonise
 This will start PiVT as a daemon and return immediately, it will run in the 
 background
 
+Changelog
+------------
+
+## v2.0 (16/01/2014) ##
+- Complete rewrite to hook OMXPlayer using pexpect and Python
+- Significantly increased stability and reduced random crashes, added error 
+handling and recovery
+- Playlist can be set in config file in place of a single stop video - will 
+loop continuously for digital signage applications unless overridden by network
+- Added auto mode to play next loaded video immediately instead of 
+returning to playlist
+- Added seamless loop mode for stop videos which line up exactly, provided 
+suitable OMXPlayer version installed (see above)
+- Added daemonisation system to run PiVT with console disconnected
+- File list now maintained internally and updated periodically, retrieval 
+of list for clients is much faster
+- Bugs when changing file types now resolved
+- Configuration can be loaded from text file or set on command line
+- Reduced delays switching between videos
+- Added option to log to file
+
+
 OMXPlayer
 ---------------
 All credit to Edgar Hucek and Petr Baudis (and others!) for the underlying video playing
