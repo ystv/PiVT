@@ -22,17 +22,19 @@ Prerequisites
 ------------------
 The YAML and pexpect modules for Python are required for PiVT. For Raspbian,
 run something like this to install them:
+
     sudo apt-get install python-pexpect python-yaml
 
+For smooth video playback, at least 128MB RAM must be assigned to the GPU, use
+`raspi-config` to configure this.
 
 Configuration
 -----------------
 Configuration can either be supplied on the command line or within a YAML
 configuration file. A sample, config.yaml, is provided.
 
-To specify arguments with the command line, say `python PiVT.py --help`
-
-For a full listing of command line options. It is not possible to set some
+To specify arguments with the command line, say `python PiVT.py --help` 
+for a full listing of command line options. It is not possible to set some
 options (such as playlists) from the command line
 
 Using PiVT
