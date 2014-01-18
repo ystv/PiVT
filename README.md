@@ -62,10 +62,12 @@ background
 Changelog
 ------------
 
-## v2.0.1 (18/01/2014) ##
-- Added a more helpful error message when no stopvideo/playlist video could be loaded at all
+### v2.0.1 (18/01/2014) ###
+- Added a more helpful error message when no stopvideo/playlist video could be 
+loaded at all
+- Version number now shown as part of help output
 
-## v2.0 (16/01/2014) ##
+### v2.0 (16/01/2014) ###
 - Complete rewrite to hook OMXPlayer using pexpect and Python
 - Significantly increased stability and reduced random crashes, added error 
 handling and recovery

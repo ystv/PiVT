@@ -17,6 +17,8 @@ This is the main file that runs the app - see README.md for more info
 
 """
 
+VERSION = "2.0.1"
+
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(message)s"
 LOG_LEVEL = logging.INFO
 
@@ -29,7 +31,7 @@ def default(x, e, y):
     
 def parse_commandline():
     """Configure argparse and read arguments"""
-    parser = argparse.ArgumentParser(description='Video player wrapper around OMXPlayer')
+    parser = argparse.ArgumentParser(description='Video player wrapper around OMXPlayer. Version: ' + VERSION)
     parser.add_argument('--config', help='Configuration file (see config.yaml as an example, overridden by command line)', 
         dest='configfile', nargs='?', default=None)
     parser.add_argument('--stopvideo, -s', action='store', 
