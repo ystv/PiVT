@@ -142,7 +142,12 @@ def main():
     logging.info("Configuration loaded")
 
     # Load up the gapless video player class
-    player = PiVTGaplessVideo(playlist, videofolder, omxcommands, omxpath, cleanloop)
+    try:
+        player = PiVTGaplessVideo(playlist, videofolder, omxcommands, omxpath, cleanloop)
+    except Exception:
+        logging.error("Exception caught, shutting down")
+        sys.exit(2)
+        
     atexit.register(player.shutdown)
 
     if port != None:
