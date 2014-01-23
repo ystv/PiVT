@@ -89,4 +89,5 @@ def get_omx_duration(item):
             logging.debug('Got bad duration {0}'.format(data))
             return 0
     else:
+        logging.debug('Unable to match duration from data:\r\n {0}'.format(data))
         return 0    
