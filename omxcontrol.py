@@ -4,7 +4,7 @@ import logging
 import pexpect
 import os
 import datetime
-
+from time import sleep
 
 class OMXControl(object):
 
@@ -13,40 +13,40 @@ class OMXControl(object):
     _POSITION_REGEX = re.compile(r'M:\s*([\d.]+)')
     _LOG_OMX = False
     
-    # Status options: 1 - Play, 0 - Pause, -1 - Not loaded, -2 - Loading
-    _status = -1
+    # Status options: 1 - Play, 0 - Pause, -1 - Not loaded, -2 - Loading, -3 - Hidden video loading
+    _status = -2
     
     # Name of playing file, stored to help calling class
     filename = ""
     
 
-    def __init__(self, fileargs, duration = None, binpath = '/usr/bin/omxplayer'):
+    def __init__(self, fileargs, duration = None, binpath = '/usr/bin/omxplayer',
+                 hidevideo = False):
         logging.basicConfig(level=logging.DEBUG)
-        logging.debug("Starting OMXControl with args %s", repr(fileargs))
         
         cwd = os.getcwd()
         os.chdir(os.path.dirname(binpath))
+        
         self._omxinstance = pexpect.spawn(binpath, fileargs, timeout=None)
-		
+
         if self._LOG_OMX == True:
             os.chdir(cwd)
             self._omxinstance.logfile = open("omxlog-{0}.log".format(datetime.datetime.now()), 'w+')
-
-        # Set up some state vars
-        self.duration = duration
-        self._position = 0
-        self._status = -2
+        
+        if (hidevideo == True):
+            self._status = -3
+        else:
+            self._status = -2
         
         # Spin up the monitoring thread and let it monitor
         logging.debug("Spinning up monitor thread")
-        self._monitorthread = threading.Thread(target=self._monitor_player, args=(self._omxinstance,))
+        self._monitorthread = threading.Thread(target=self._monitor_player, 
+                args=(fileargs,binpath,duration))
         self._monitorthread.start()
-        
-    def __del__(self):
-        logging.debug("Destructing")
-        if self._omxinstance.isalive():
-            self._omxinstance.kill(0)
             
+    def kill(self):
+        self.stop()
+        self._omxinstance.terminate(force=True)
         
     def pause(self):
         if self._status == 1:
@@ -57,6 +57,12 @@ class OMXControl(object):
         if self._status == 0:
             self._status = 1
             self._omxinstance.write(self._PLAY_TOGGLE)
+            
+    def runtofirstframe(self):
+        """Run the player ahead from not playing to frozen on the first frame"""
+        if (self.get_ready() == True and self._position <= 0):
+            self.play()
+            self._status = -2
     
     # End playback and shutdown the player        
     def stop(self):
@@ -77,52 +83,73 @@ class OMXControl(object):
         """Returns true when ready for playback"""
         if self._status == 0:
             return True
+	return False
 
     def get_alive(self):
         """Returns true if the player has not crashed"""
         if self._status != -1:
             return True
+	return False
 
     # Internally monitor the player and update status
-    def _monitor_player(self, instance):
+    def _monitor_player(self, fileargs, binpath, duration):
         logging.debug("Startup of monitor thread")
+        
+        logging.debug("Starting OMXControl with args %s", repr(fileargs))
+        
+        # Set up some state vars
+        self.duration = duration
+        self._position = 0
+        
         while True:
             # Try and catch the process' death
-            if instance.isalive() == False:
+            if self._omxinstance.isalive() == False:
                 logging.debug("Dead player!")
                 self._status = -1
                 break
 
-            matchline = instance.expect(['Video codec', 'have a nice day', self._POSITION_REGEX, pexpect.EOF, pexpect.TIMEOUT])
-            if matchline > 2:
-                logging.debug("No data: %s", repr(self))
+            matchline = self._omxinstance.expect(['Video codec', 'have a nice day', self._POSITION_REGEX, pexpect.EOF, pexpect.TIMEOUT])
+            
+            if matchline == 3:
+                logging.debug("EOF reached: %s. Last line: %s", repr(self), self._omxinstance.buffer)
+                self._status = -1
+                break
+            elif matchline > 3:
+                logging.debug("No data: %s. Last line: %s", repr(self), self._omxinstance.buffer)
                 # Zero length means something almost certainly went wrong. Die
-                if instance.isalive():
-                    instance.write(self._STOP_COMMAND)
+                if self._omxinstance.isalive():
+                    self._omxinstance.write(self._STOP_COMMAND)
                 self._status = -1
                 break
             
             # Try and work out what the data was
             # Was it the shutdown message?
-            if 1 == matchline:
+            elif 1 == matchline:
                 self._status = -1
                 self._position = self.duration
                 logging.debug("Player shutdown")
-                instance.kill(0)
+                self._omxinstance.terminate(force=True)
                 break
             
             # If we're still waiting on startup, it might be the startup complete line
             elif 0 == matchline:
-                logging.debug("Pausing")
-                # Issue a pause command
-                instance.write(self._PLAY_TOGGLE)
-                self._status = 0
+                logging.debug("Started")
+                # Issue a pause command if required
+                
+                if (self._status == -3):
+                    self._omxinstance.write(self._PLAY_TOGGLE)
+                    self._status = 0
+                    self._position = -1
             
             else:    
                 # Ok, probably the position state then
-                statusmatch = instance.match.group(1)
+                statusmatch = self._omxinstance.match.group(1)
                 
                 if statusmatch != None:
                     self._position = float(statusmatch.strip()) / 1000000
+                    
+                    if (self._status == -2 and self._position > 0):
+                        self._omxinstance.write(self._PLAY_TOGGLE)
+                        self._status = 0
         
         

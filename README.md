@@ -2,16 +2,11 @@ PiVT
 =========
 
 PiVT is a VT playout server for Raspbery Pi, which wraps OMXPlayer to provide
-seamless(-ish) playback and network control.
+seamless(-ish) playback and network control. Written in Python.
 
-Written in Python, two modes are provided, either network-controlled or playlist
-mode. In network-controlled mode, a video is looped continuously until commands
-are received from a simple telnet interface (connect and press `h <ENTER>` for
-a list of the commands). A client, PiVTDesktop is available at
-https://github.com/YSTV/PiVTDesktop
-
-Playlist mode takes a simple playlist from the configuration file and loops it,
-for example for digital signage applications.
+Executes commands given over a network with a simple telnet interface (connect
+and press `h <ENTER>` for a list of the commands). A client, PiVTDesktop is 
+available at https://github.com/YSTV/PiVTDesktop
 
 Downloading PiVT
 ---------------------
@@ -31,8 +26,7 @@ For smooth video playback, at least 128MB RAM must be assigned to the GPU, use
 Configuration
 -----------------
 Configuration can either be supplied on the command line or within a YAML
-configuration file. A sample, config.yaml, is provided. At least one valid
-playlist item or stopvideo is required so something is always played.
+configuration file. A sample, config.yaml, is provided.
 
 To specify arguments with the command line, say `python PiVT.py --help` 
 for a full listing of command line options. It is not possible to set some
@@ -44,15 +38,6 @@ Ensure you can launch OMXPlayer and play a video correctly. Then do:
 
     python PiVT.py --config config.yaml
 
-Clean Loop Mode
----------------
-As an additional feature, cleanloop mode can be enabled when an OMXPlayer
-build that implements the `--loop` flag is available, for example at
-https://github.com/stewiem2000/omxplayer/tree/seamless-looping
-This can be a little temperamental, but means the stopvideo will seamlessly
-restart at the end provided the source video is seamless, by continually
-looping it in the background.
-
 Daemonise
 -----------
     sudo python PiVTDaemon.py start --config /absolute/path/to/file.yaml
@@ -61,6 +46,10 @@ background
 
 Changelog
 ------------
+### v2.1.0 (01/08/2014) ###
+- Removed playlist feature as it was broken by Pi firmware updates
+- Migrated to showing a freeze-frame of video until started
+- Stability improvements
 
 ### v2.0.1 (18/01/2014) ###
 - Added a more helpful error message when no stopvideo/playlist video could be 

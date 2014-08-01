@@ -13,8 +13,7 @@ CYCLE_TIME = 10
 HELPSTRING = ("PiVT Command Reference: \r\n" 
                 "\t p         \t\tPlay loaded file\r\n" 
                 "\t l FILENAME\t\tLoad file in background\r\n" 
-                "\t u         \t\tUnload background file\r\n" 
-                "\t s         \t\tStop playing (run stop video)\r\n" 
+                "\t s         \t\tStop playing\r\n" 
                 "\t i         \t\tDisplay current status\r\n" 
                 "\t g         \t\tDisplay list of files and durations\r\n" 
                 "\t m         \t\tToggle auto-play of loaded videos\r\n"
@@ -29,12 +28,13 @@ class PiVTClientConn(asynchat.async_chat):
         self.data = ""
         self.controller = controller
         self.filelist = filelist
+        self._server = server
         
         self.push("Welcome to PiVT\r\n")
         
     def collect_incoming_data(self,data):
         self.data = self.data + data
-        
+
     def found_terminator(self):
         """Handle new incoming data by processing command line"""
         # Split the command up
@@ -61,7 +61,9 @@ class PiVTClientConn(asynchat.async_chat):
             
             if res == 0:
                 active, loaded, duration, remain, auto = self.controller.get_info()
-                self.push("202 Playing \"{0}\" {1} seconds long\r\n".format(active, duration))
+                
+                self._server.broadcast("202 Playing \"{0}\" {1} "
+                                    "seconds long\r\n".format(active, duration))
             else:
                 self.push("500 {0}\r\n".format(res))
         elif splits[0] == 'l':
@@ -80,11 +82,20 @@ class PiVTClientConn(asynchat.async_chat):
                     if ret != 0:
                         self.push("500 {0}\r\n".format(ret))
                     else:
-                        self.push('203 Loaded "{0}"\r\n'.format(splits[1]))
-        elif splits[0] == 'u':
-            self.controller.unload()
+                        self.push('203 Loaded "{0}", {1} seconds long\r\n'.format(splits[1], duration))
         elif splits[0] == 's':
-            self.controller.stop()
+            ret = self.controller.stop()
+            if (ret != 0):
+                self.push("500 {0}\r\n".format(ret))
+            else:
+                active, loaded, duration, remain, auto = self.controller.get_info()
+                if loaded != None:
+                    loadsegment = "Loaded \"{0}\", {1} seconds long".format(loaded, duration)
+                else:
+                    loadsegment = "No video loaded"
+
+                self._server.broadcast("204 Stopped, {1}, Auto {0}\r\n".format(repr(auto), loadsegment))
+                
         elif splits[0] == 'i':
             active, loaded, duration, remain, auto = self.controller.get_info()
             
@@ -137,9 +148,12 @@ class PiVTNetwork(asyncore.dispatcher):
             
     def broadcast(self, message):
         """Send a message to all connected clients"""
+        """Purge closed clients"""
+        self.clientlist[:] = [client for client in self.clientlist if client.connected]
+        
         for client in self.clientlist:
             client.push(message)
-    
+
     def poll(self):
         """Wrapper so the top-level class doesn't need asyncore"""
         asyncore.poll(0.1)

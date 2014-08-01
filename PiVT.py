@@ -6,6 +6,7 @@ import shlex
 import logging
 import sys
 import atexit
+import signal
 
 from pivtgapless import PiVTGaplessVideo
 from pivtnetwork import PiVTNetwork
@@ -17,10 +18,14 @@ This is the main file that runs the app - see README.md for more info
 
 """
 
-VERSION = "2.0.1"
+VERSION = "2.1.0"
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(message)s"
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
+
+player = None
+network = None
+filelist = None
 
 # Helper function so config parsing is easier
 def default(x, e, y):
@@ -34,9 +39,6 @@ def parse_commandline():
     parser = argparse.ArgumentParser(description='Video player wrapper around OMXPlayer. Version: ' + VERSION)
     parser.add_argument('--config', help='Configuration file (see config.yaml as an example, overridden by command line)', 
         dest='configfile', nargs='?', default=None)
-    parser.add_argument('--stopvideo, -s', action='store', 
-        help='Video to show when nothing is playing (ignored if a playlist is set). Relative to --videofolder', 
-        dest='stopvideo')
     parser.add_argument('--videofolder, -f', action='store', 
         help='Root path for video files', dest='folder')
     parser.add_argument('--port, -p', action='store', 
@@ -53,14 +55,11 @@ def parse_config(argparser):
     args and checks we got everything we needed
     
     """
-    stopvideo = None
     videofolder = None
-    playlist = None
     port = None
     omxcommands = ['-s', '--no-osd']
     omxpath = '/usr/bin/omxplayer'
     cycletime = 30
-    cleanloop = False
     logfile = None
     
     # Read a configuration file
@@ -68,15 +67,12 @@ def parse_config(argparser):
         try:
             with open(argparser.configfile, 'r') as f:
                 configdata = yaml.load(f)
-            videofolder = default(lambda: configdata['videofolder'], IndexError, None)
-            stopvideo = default(lambda: configdata['stopvideo'], IndexError, None)   
+            videofolder = default(lambda: configdata['videofolder'], IndexError, None)  
             port = default(lambda: configdata['port'], IndexError, None)
             omxstring = default(lambda: configdata['omxargs'], KeyError, '')
             omxcommands += shlex.split(omxstring)
-            playlist = default(lambda: configdata['playlist'], IndexError, None)
             omxpath = default(lambda: configdata['omxplayer'], IndexError, '/usr/bin/omxplayer')
             cycletime = default(lambda: configdata['listcycletime'], IndexError, 30)
-            cleanloop = default(lambda: configdata['cleanloop'], IndexError, False)
             logfile = default(lambda: configdata['logfile'], IndexError, None)
     
         except:
@@ -85,41 +81,36 @@ def parse_config(argparser):
     # Handle command line args
     if argparser.folder != None:
         videofolder = argparser.folder
-    if argparser.stopvideo != None:
-        stopvideo = argparser.stopvideo
     if argparser.port != None:
         port = argparser.port
     if argparser.omxcommands != None:
         omxcommands += shlex.split(argparser.omxcommands)
     
     # Some configuration validation logic
-    if port == None and playlist == None:
-        logging.error('No port set and no playlist specified.')
+    if port == None:
+        logging.error('No port set.')
         sys.exit(1)
-    elif stopvideo == None and playlist == None:
-        logging.error('Playlist or stopvideo must be set')
-        sys.exit(2)
     elif port == None:
         logging.info('Port not set, network interface disabled')
     if videofolder == None:
         logging.warn('Video folder should probably be set')
-    else:
-        stopvideo = os.path.join(videofolder, stopvideo)
-    if stopvideo != None and playlist != None:
-        logging.warn('Ignoring redundant stopvideo as a playlist was set')    
-    if cleanloop == True and playlist != None:
-        logging.warn('Ignoring cleanloop as playlist set')
-        cleanloop = False
-        
-    # Set up single item playlist for stopvideo if needed
-    if playlist == None:
-        playlist = [stopvideo, ]
         
     # Standardise video folder path
     videofolder = os.path.normpath(videofolder) + os.sep
         
-    return (videofolder, playlist, port, omxcommands, omxpath, cycletime, 
-            cleanloop, logfile)
+    return (videofolder, port, omxcommands, omxpath, cycletime, 
+            logfile)
+
+def interrupt(signal, frame):
+    if player != None:
+        player.shutdown()
+    
+    if network != None:
+        network.shutdown()
+    
+    if filelist != None:
+        filelist.kill_updates()
+    os._exit(0)
 
 def main():
     # Startup logger
@@ -128,7 +119,7 @@ def main():
     
     # Load configuration data
     args = parse_commandline()
-    videofolder, playlist, port, omxcommands, omxpath, cycletime, cleanloop, logfile = parse_config(args)
+    videofolder, port, omxcommands, omxpath, cycletime, logfile = parse_config(args)
     
     # Reconfigure logging if needed
     if logfile != None:
@@ -143,18 +134,23 @@ def main():
 
     # Load up the gapless video player class
     try:
-        player = PiVTGaplessVideo(playlist, videofolder, omxcommands, omxpath, cleanloop)
+        global player
+        player = PiVTGaplessVideo(videofolder, omxcommands, omxpath)
+        signal.signal(signal.SIGINT, interrupt)    
+        atexit.register(player.shutdown)
     except Exception:
         logging.error("Exception caught, shutting down")
         sys.exit(2)
         
-    atexit.register(player.shutdown)
 
     if port != None:
         # Network server startup
         try:
+            global filelist
             filelist = PiVTFileList(videofolder, cycletime)
             atexit.register(filelist.kill_updates)
+            
+            global network
             network = PiVTNetwork(port, player, filelist)
             atexit.register(network.shutdown)
         except:
@@ -166,29 +162,28 @@ def main():
     # Main loop
     logging.debug("Begin main loop")
     
-    try:
-        while True:
-            # Poll video end status and handle update
-            if player.poll() == True:
-                active, loaded, duration, remain, auto = player.get_info()
-                if active != None:
-                    network.broadcast("204 Playing \"{0}\" {1} seconds long Auto {2}\r\n".format(active, remain, repr(auto)))
+    while True:
+        # Poll video end status and handle update
+        if player.poll() == True:
+            active, loaded, duration, remain, auto = player.get_info()
+
+            if active != None:
+                network.broadcast("204 Playing \"{0}\" {1} seconds long Auto {2}\r\n".format(active, remain, repr(auto)))
+            else:
+                if loaded != None:
+                    loadsegment = "Loaded \"{0}\", {1} seconds long".format(loaded, duration)
                 else:
-                    network.broadcast("204 Stopped Auto {0}\r\n".format(repr(auto)))
-            
-            # Service active network connections if up
-            if port != None:
-                network.poll()
-            
-            # Sleep 20ms to avoid thrashing CPU
-            sleep(0.02)
-    except KeyboardInterrupt:
-        player.shutdown()
-        if network != None:
-            filelist.kill_updates()
-            network.shutdown()        
-    
-    
+                    loadsegment = "No video loaded"
+
+                network.broadcast("204 Stopped, {1}, Auto {0}\r\n".format(repr(auto), loadsegment))
+        
+        # Service active network connections if up
+        if port != None:
+            network.poll()
+        
+        # Sleep 20ms to avoid thrashing CPU
+        sleep(0.02)
+
 if __name__ == '__main__':
     main()
     sys.exit(0)
