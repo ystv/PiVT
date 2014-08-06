@@ -27,6 +27,10 @@ player = None
 network = None
 filelist = None
 
+def handle_pdb(sig, frame):
+    import pdb
+    pdb.Pdb().set_trace(frame)
+
 # Helper function so config parsing is easier
 def default(x, e, y):
     try:
@@ -113,6 +117,9 @@ def interrupt(signal, frame):
     os._exit(0)
 
 def main():
+    # Register handler so SIGUSR1 drops into the debugger
+    signal.signal(signal.SIGUSR1, handle_pdb)
+
     # Startup logger
     logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
     logging.info("PiVT starting up")

@@ -10,7 +10,7 @@ videofolder: /videos
 port: 9815
 
 # Additional arguments to supply to OMXPlayer (--omxargs)
-omxargs: --nodeinterlace --win '0 0 1920 1080'
+omxargs: --nodeinterlace --win '0 0 1920 1080' --adev local
 
 # Path to log file
 logfile: pivtlog.log
