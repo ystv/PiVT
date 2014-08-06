@@ -9,7 +9,7 @@ from omxcontrol import OMXControl
 """Gapless playback classes"""
 
 # Time left at which to start next video
-REMAINING_THRESHOLD = 0.05
+REMAINING_THRESHOLD = 0.12
 
 class PiVTGaplessVideo(object):
     """Load up a series of video players and handle seamless playback
