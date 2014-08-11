@@ -8,8 +8,6 @@ from omxcontrol import OMXControl
 
 """Gapless playback classes"""
 
-# Time left at which to start next video
-REMAINING_THRESHOLD = 0.12
 
 class PiVTGaplessVideo(object):
     """Load up a series of video players and handle seamless playback
@@ -91,6 +89,7 @@ class PiVTGaplessVideo(object):
                     return "Loading timed out"
                 sleep(0.01)
             
+            logging.info("Loaded %s", filename)
             return 0
         else:
             return "Loading failed"
@@ -174,13 +173,13 @@ class PiVTGaplessVideo(object):
     def poll(self):
         """Check if the current file has ended, and start next if it has"""
         if (self._playing != None):
-            if (self._playing.get_remaining() <= REMAINING_THRESHOLD or
-                self._playing.get_alive() == False):
+            if (self._playing.get_alive() == False):
                 
-                logging.debug("Stopped %s", self._playing.filename)
+                logging.info("Stopped %s", self._playing.filename)
                 
                 safekill(self._playing)
                 self._playing = None
+                self._last_remaining = 0
                 
                 if (self.automode == True and self._loader != None):
                     logging.info("Auto-advancing")
@@ -190,6 +189,9 @@ class PiVTGaplessVideo(object):
                 
                 # Marker that something happened
                 return True
+
+            else:
+                self._last_remaining = self._playing.get_remaining()
         return False
        
     def _load_internal(self, filename, duration, extraflags=[], hidevideo = False):
@@ -203,15 +205,15 @@ class PiVTGaplessVideo(object):
     def shutdown(self):
         try:
             self._playing.kill()
-            logging.info("Killed player")
+            logging.warn("Killed player")
         except AttributeError:
-            logging.debug("Cannot kill playing as not running!")
+            logging.warn("Cannot kill playing as not running!")
             
         try:
             self._loader.kill()
-            logging.info("Killed loader")
+            logging.warn("Killed loader")
         except AttributeError:
-            logging.debug("Cannot kill loader as not running!")
+            logging.warn("Cannot kill loader as not running!")
 
 def safekill(instance):
     """Attempt to kill an instance or timeout"""
@@ -227,3 +229,4 @@ def safekill(instance):
             return False
         sleep(0.01)
     return True
+

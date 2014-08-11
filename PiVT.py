@@ -18,7 +18,7 @@ This is the main file that runs the app - see README.md for more info
 
 """
 
-VERSION = "2.1.0"
+VERSION = "2.1.1"
 
 LOG_FORMAT = "%(asctime)s:%(levelname)s:%(message)s"
 LOG_LEVEL = logging.DEBUG
@@ -94,8 +94,6 @@ def parse_config(argparser):
     if port == None:
         logging.error('No port set.')
         sys.exit(1)
-    elif port == None:
-        logging.info('Port not set, network interface disabled')
     if videofolder == None:
         logging.warn('Video folder should probably be set')
         
@@ -188,8 +186,8 @@ def main():
         if port != None:
             network.poll()
         
-        # Sleep 20ms to avoid thrashing CPU
-        sleep(0.02)
+        # Sleep to avoid thrashing CPU
+        sleep(0.1)
 
 if __name__ == '__main__':
     main()

@@ -46,6 +46,12 @@ background
 
 Changelog
 ------------
+
+### v2.1.1 (13/08/2014) ###
+- Further stability improvement work to fix occasional video freeze (caused by
+  omxplayer not shutting down correctly, now timeouts checked)
+- Log level improvements
+
 ### v2.1.0 (01/08/2014) ###
 - Removed playlist feature as it was broken by Pi firmware updates
 - Migrated to showing a freeze-frame of video until started

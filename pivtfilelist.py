@@ -82,7 +82,7 @@ def get_omx_duration(item):
             x = datetime.datetime.strptime(matchgroup.group(1), '%H:%M:%S.%f')
             duration = datetime.timedelta(hours=x.hour,minutes=x.minute,seconds=x.second,
                            microseconds=x.microsecond).total_seconds()
-            logging.debug('Got file {0} duration {1} seconds'.format(item, duration))
+            logging.info('Got file {0} duration {1} seconds'.format(item, duration))
             return duration
         except ValueError:
             # Bad duration...
