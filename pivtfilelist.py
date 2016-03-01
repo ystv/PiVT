@@ -70,9 +70,9 @@ def get_omx_duration(item):
     # Call the player with the offending command
     try:
         data = subprocess.check_output([_OMX_COMMAND, '-i', item], shell=False, stderr=subprocess.STDOUT)
-    except:
-        logging.exception('Failed to get duration for {0}'.format(item))
-        return 0
+    except subprocess.CalledProcessError as err:
+        logging.warning('Non-zero exit status while getting duration for {0}'.format(item))
+        data = err.output
     
     # Try and grab a duration by regex
     matchgroup = _DURATION_REXP.search(data)
